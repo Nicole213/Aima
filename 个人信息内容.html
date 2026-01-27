@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人信息</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50">
+    <div class="p-6 max-w-5xl mx-auto">
+        <!-- Personal Info Card -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-400 px-6 py-4 rounded-t-lg">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-user-circle mr-3"></i>个人信息
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start gap-8">
+                    <!-- Avatar Section -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative group">
+                            <div class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                                <span id="avatar-text">张</span>
+                            </div>
+                            <button onclick="changeAvatar()" class="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg hover:bg-blue-50 transition-colors">
+                                <i class="fas fa-camera text-blue-600"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">点击相机图标更换头像</p>
+                    </div>
+
+                    <!-- Info Section -->
+                    <div class="flex-1">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">用户名</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="input-username" value="张三" 
+                                           class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <button onclick="saveUsername()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        <i class="fas fa-save mr-1"></i>保存
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">手机号</label>
+                                <input type="text" value="13800138001" disabled
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed">
+                                <p class="text-xs text-slate-500 mt-1">手机号不可修改</p>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-2">所属角色</label>
+                                <div class="flex gap-2">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm">管理员</span>
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm">操作员</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">角色由系统管理员分配</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Change Password Button -->
+                        <div class="mt-6 pt-6 border-t border-slate-200">
+                            <button onclick="openPasswordModal()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-key mr-2"></i>修改密码
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="password-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-2/5">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-key mr-3"></i>修改密码
+                </h3>
+                <button onclick="closePasswordModal()" class="text-white hover:text-slate-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">旧密码 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="password" id="old-password" placeholder="请输入旧密码" 
+                                   class="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="togglePassword('old-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">新密码 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="password" id="new-password" placeholder="请输入新密码" 
+                                   class="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="togglePassword('new-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">密码长度至少6位，建议包含字母、数字和特殊字符</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">确认新密码 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="password" id="confirm-password" placeholder="请再次输入新密码" 
+                                   class="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="togglePassword('confirm-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button onclick="closePasswordModal()" class="px-6 py-2 bg-slate-400 text-white rounded-lg hover:bg-slate-500 transition-colors">
+                        取消
+                    </button>
+                    <button onclick="changePassword()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-check mr-2"></i>确认修改
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avatar Selection Modal -->
+    <div id="avatar-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-2/5">
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <h3 class="text-xl font-bold text-slate-800">选择头像</h3>
+                <button onclick="closeAvatarModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-4 gap-4">
+                    <button onclick="selectAvatar('张', 'blue')" class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        张
+                    </button>
+                    <button onclick="selectAvatar('李', 'green')" class="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        李
+                    </button>
+                    <button onclick="selectAvatar('王', 'purple')" class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        王
+                    </button>
+                    <button onclick="selectAvatar('赵', 'red')" class="w-20 h-20 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        赵
+                    </button>
+                    <button onclick="selectAvatar('刘', 'yellow')" class="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        刘
+                    </button>
+                    <button onclick="selectAvatar('陈', 'pink')" class="w-20 h-20 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        陈
+                    </button>
+                    <button onclick="selectAvatar('杨', 'indigo')" class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        杨
+                    </button>
+                    <button onclick="selectAvatar('周', 'teal')" class="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white text-2xl font-bold hover:scale-110 transition-transform">
+                        周
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock current user data
+        const currentUser = {
+            username: '张三',
+            phone: '13800138001',
+            roles: ['管理员', '操作员'],
+            avatar: '张',
+            avatarColor: 'blue'
+        };
+
+        // Initialize page
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('input-username').value = currentUser.username;
+            document.getElementById('avatar-text').textContent = currentUser.avatar;
+        });
+
+        // Save username
+        function saveUsername() {
+            const newUsername = document.getElementById('input-username').value.trim();
+            if (!newUsername) {
+                alert('用户名不能为空！');
+                return;
+            }
+            currentUser.username = newUsername;
+            alert('用户名已更新！');
+        }
+
+        // Change avatar
+        function changeAvatar() {
+            document.getElementById('avatar-modal').classList.remove('hidden');
+        }
+
+        // Close avatar modal
+        function closeAvatarModal() {
+            document.getElementById('avatar-modal').classList.add('hidden');
+        }
+
+        // Open password modal
+        function openPasswordModal() {
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+
+        // Close password modal
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+            resetPasswordForm();
+        }
+
+        // Select avatar
+        function selectAvatar(text, color) {
+            currentUser.avatar = text;
+            currentUser.avatarColor = color;
+            document.getElementById('avatar-text').textContent = text;
+            
+            // Update avatar color
+            const avatarDiv = document.getElementById('avatar-text').parentElement;
+            const colorMap = {
+                'blue': 'from-blue-400 to-blue-600',
+                'green': 'from-green-400 to-green-600',
+                'purple': 'from-purple-400 to-purple-600',
+                'red': 'from-red-400 to-red-600',
+                'yellow': 'from-yellow-400 to-yellow-600',
+                'pink': 'from-pink-400 to-pink-600',
+                'indigo': 'from-indigo-400 to-indigo-600',
+                'teal': 'from-teal-400 to-teal-600'
+            };
+            
+            // Remove all color classes
+            Object.values(colorMap).forEach(classes => {
+                classes.split(' ').forEach(cls => avatarDiv.classList.remove(cls));
+            });
+            
+            // Add new color classes
+            colorMap[color].split(' ').forEach(cls => avatarDiv.classList.add(cls));
+            
+            closeAvatarModal();
+            alert('头像已更新！');
+        }
+
+        // Toggle password section
+        function togglePasswordSection() {
+            const section = document.getElementById('password-section');
+            const btn = document.getElementById('toggle-password-btn');
+            
+            if (section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-times mr-2"></i>收起';
+            } else {
+                section.classList.add('hidden');
+                btn.innerHTML = '<i class="fas fa-edit mr-2"></i>修改密码';
+                resetPasswordForm();
+            }
+        }
+
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = event.currentTarget.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Change password
+        function changePassword() {
+            const oldPassword = document.getElementById('old-password').value.trim();
+            const newPassword = document.getElementById('new-password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                alert('请填写所有密码字段！');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                alert('新密码长度至少6位！');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert('两次输入的新密码不一致！');
+                return;
+            }
+
+            // Mock password validation
+            if (oldPassword !== '123456') {
+                alert('旧密码错误！');
+                return;
+            }
+
+            alert('密码修改成功！请重新登录。');
+            closePasswordModal();
+        }
+
+        // Reset password form
+        function resetPasswordForm() {
+            document.getElementById('old-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下件口缓存区配置</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50">
+    <div class="p-6">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow p-4 mb-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-slate-800">下件口缓存区配置</h2>
+                    <button id="edit-btn" onclick="toggleEdit()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-edit mr-2"></i>配置
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuration Cards -->
+            <div class="space-y-3" id="config-container">
+                <!-- Cards will be inserted here -->
+            </div>
+
+            <!-- Action Buttons (Hidden by default) -->
+            <div id="action-buttons" class="hidden mt-4 flex justify-end gap-3">
+                <button onclick="cancelEdit()" class="px-5 py-2 bg-slate-400 text-white rounded-lg hover:bg-slate-500 transition-colors">
+                    取消
+                </button>
+                <button onclick="saveConfig()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    保存配置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration data
+        const bufferConfig = [
+            { id: 1, name: '下件口 1 (总装线 A)', capacity: 10 },
+            { id: 2, name: '下件口 2 (总装线 B)', capacity: 12 },
+            { id: 3, name: '下件口 3 (总装线 C)', capacity: 10 },
+            { id: 4, name: '下件口 4 (总装线 D)', capacity: 15 },
+            { id: 5, name: '下件口 5 (总装线 E)', capacity: 10 },
+            { id: 6, name: '下件口 6 (总装线 F)', capacity: 12 },
+            { id: 7, name: '下件口 7 (总装线 G)', capacity: 10 },
+            { id: 8, name: '下件口 8 (总装线 H)', capacity: 10 }
+        ];
+
+        let isEditing = false;
+        let originalConfig = [];
+
+        // Render configuration cards
+        function renderConfig() {
+            const container = document.getElementById('config-container');
+            container.innerHTML = bufferConfig.map(item => `
+                <div class="bg-white rounded-lg shadow p-4 border border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-base font-semibold text-slate-800">${item.name}</h3>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-slate-500">最大容量：</span>
+                            ${isEditing ? `
+                                <input type="number" 
+                                       id="capacity-${item.id}" 
+                                       value="${item.capacity}" 
+                                       min="1" 
+                                       max="50"
+                                       class="w-20 px-2 py-1.5 border border-slate-300 rounded-lg text-center font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            ` : `
+                                <span class="text-xl font-bold text-slate-800">${item.capacity}</span>
+                            `}
+                            <span class="text-sm text-slate-500">车</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Toggle edit mode
+        function toggleEdit() {
+            isEditing = true;
+            originalConfig = JSON.parse(JSON.stringify(bufferConfig));
+            
+            document.getElementById('edit-btn').classList.add('hidden');
+            document.getElementById('action-buttons').classList.remove('hidden');
+            
+            renderConfig();
+        }
+
+        // Cancel edit
+        function cancelEdit() {
+            isEditing = false;
+            
+            // Restore original config
+            bufferConfig.length = 0;
+            bufferConfig.push(...originalConfig);
+            
+            document.getElementById('edit-btn').classList.remove('hidden');
+            document.getElementById('action-buttons').classList.add('hidden');
+            
+            renderConfig();
+        }
+
+        // Save configuration
+        function saveConfig() {
+            // Get updated values
+            bufferConfig.forEach(item => {
+                const input = document.getElementById(`capacity-${item.id}`);
+                if (input) {
+                    const newValue = parseInt(input.value);
+                    if (newValue >= 1 && newValue <= 50) {
+                        item.capacity = newValue;
+                    }
+                }
+            });
+
+            isEditing = false;
+            
+            document.getElementById('edit-btn').classList.remove('hidden');
+            document.getElementById('action-buttons').classList.add('hidden');
+            
+            renderConfig();
+            
+            alert('配置已保存！');
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            renderConfig();
+        });
+    </script>
+</body>
+</html>
