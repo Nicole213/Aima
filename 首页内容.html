@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页内容</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 p-6">
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-slate-500 font-medium">今日入库 (车架)</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1">1,248</h3>
+                    <p class="text-xs text-green-600 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-up"></i> 12% 较昨日</p>
+                </div>
+                <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i class="fa-solid fa-arrow-right-to-bracket"></i></div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-slate-500 font-medium">今日出库 (车架)</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1">982</h3>
+                    <p class="text-xs text-slate-400 mt-1">计划完成率 85%</p>
+                </div>
+                <div class="p-2 bg-purple-50 rounded-lg text-purple-600"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-slate-500 font-medium">库存总量 (SKU)</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1">456</h3>
+                    <p class="text-xs text-slate-400 mt-1">占用小车: 3,420</p>
+                </div>
+                <div class="p-2 bg-orange-50 rounded-lg text-orange-600"><i class="fa-solid fa-cubes"></i></div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-slate-500 font-medium">库容利用率</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1">78%</h3>
+                    <p class="text-xs text-yellow-600 mt-1">接近满载预警</p>
+                </div>
+                <div class="p-2 bg-yellow-50 rounded-lg text-yellow-600"><i class="fa-solid fa-percent"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
+            <h3 class="text-base font-semibold text-slate-800 mb-4">今日作业趋势 (入库 vs 出库)</h3>
+            <div class="h-64"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="text-base font-semibold text-slate-800 mb-4">库区空间占比</h3>
+            <div class="h-48 flex justify-center"><canvas id="storageChart"></canvas></div>
+            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span> <span>空挂具库区: 30%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> <span>库区1: 85%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> <span>库区2: 78%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> <span>库区3: 65%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span> <span>库区4: 72%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-pink-500"></span> <span>库区5: 68%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-500"></span> <span>库区6: 55%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-500"></span> <span>库区7: 60%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-teal-500"></span> <span>库区8: 70%</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-cyan-500"></span> <span>库区9: 62%</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 class="font-semibold text-slate-800">实时任务队列</h3>
+            <button class="text-sm text-blue-600 hover:text-blue-800">查看全部</button>
+        </div>
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-500">
+                <tr>
+                    <th class="px-6 py-3">任务ID</th>
+                    <th class="px-6 py-3">类型</th>
+                    <th class="px-6 py-3">物料名称</th>
+                    <th class="px-6 py-3">小车编码</th>
+                    <th class="px-6 py-3">状态</th>
+                    <th class="px-6 py-3">时间</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                <tr>
+                    <td class="px-6 py-3 font-medium">TSK-2023001</td>
+                    <td class="px-6 py-3"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">入库</span></td>
+                    <td class="px-6 py-3">Q3-高光黑-车架</td>
+                    <td class="px-6 py-3">AGV-092</td>
+                    <td class="px-6 py-3 text-green-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i> 执行中</td>
+                    <td class="px-6 py-3 text-slate-400">10:42:05</td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-3 font-medium">TSK-2023002</td>
+                    <td class="px-6 py-3"><span class="px-2 py-1 bg-orange-50 text-orange-600 rounded text-xs">出库</span></td>
+                    <td class="px-6 py-3">F5-哑光灰-车架</td>
+                    <td class="px-6 py-3">AGV-110</td>
+                    <td class="px-6 py-3 text-slate-500">待执行</td>
+                    <td class="px-6 py-3 text-slate-400">10:41:50</td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-3 font-medium">TSK-2023003</td>
+                    <td class="px-6 py-3"><span class="px-2 py-1 bg-purple-50 text-purple-600 rounded text-xs">倒库</span></td>
+                    <td class="px-6 py-3">库存整理</td>
+                    <td class="px-6 py-3">-</td>
+                    <td class="px-6 py-3 text-slate-500">已分配</td>
+                    <td class="px-6 py-3 text-slate-400">10:40:12</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Chart.js initialization
+        const trendCtx = document.getElementById('trendChart');
+        if (trendCtx) {
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['8:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+                    datasets: [{
+                        label: '入库',
+                        data: [120, 190, 150, 220, 180, 240],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: '出库',
+                        data: [80, 140, 120, 180, 150, 200],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        const storageCtx = document.getElementById('storageChart');
+        if (storageCtx) {
+            new Chart(storageCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['空挂具库区', '库区1', '库区2', '库区3', '库区4', '库区5', '库区6', '库区7', '库区8', '库区9'],
+                    datasets: [{
+                        data: [30, 85, 78, 65, 72, 68, 55, 60, 70, 62],
+                        backgroundColor: [
+                            'rgb(239, 68, 68)',   // 红色 - 空挂具库区
+                            'rgb(59, 130, 246)',  // 蓝色 - 库区1
+                            'rgb(34, 197, 94)',   // 绿色 - 库区2
+                            'rgb(234, 179, 8)',   // 黄色 - 库区3
+                            'rgb(168, 85, 247)',  // 紫色 - 库区4
+                            'rgb(236, 72, 153)',  // 粉色 - 库区5
+                            'rgb(99, 102, 241)',  // 靛蓝 - 库区6
+                            'rgb(249, 115, 22)',  // 橙色 - 库区7
+                            'rgb(20, 184, 166)',  // 青色 - 库区8
+                            'rgb(6, 182, 212)'    // 天蓝 - 库区9
+                        ]
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false  // 隐藏默认图例，使用自定义图例
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
