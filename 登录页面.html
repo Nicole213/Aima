@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爱玛 WMS 悬链库管理系统 - 登录</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-container {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .input-field:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        aima: {
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- 登录表单容器 -->
+    <div class="login-container w-full max-w-md rounded-2xl shadow-2xl p-8" id="loginForm">
+        <!-- Logo 和标题 -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-aima-500 to-aima-700 rounded-2xl mb-4 shadow-lg">
+                <i class="fa-solid fa-industry text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">爱玛 WMS 系统</h1>
+            <p class="text-sm text-slate-500">悬链库管理系统</p>
+        </div>
+
+        <!-- 登录表单 -->
+        <form onsubmit="handleLogin(event)" class="space-y-5">
+            <!-- 手机号输入 -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class="fa-solid fa-mobile-screen-button mr-1 text-aima-600"></i> 手机号
+                </label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    placeholder="请输入手机号" 
+                    maxlength="11"
+                    pattern="[0-9]{11}"
+                    required
+                    class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                >
+            </div>
+
+            <!-- 密码输入 -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class="fa-solid fa-lock mr-1 text-aima-600"></i> 密码
+                </label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        placeholder="请输入密码" 
+                        required
+                        class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-all pr-12"
+                    >
+                    <button 
+                        type="button" 
+                        onclick="togglePassword()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 记住我 & 忘记密码 -->
+            <div class="flex items-center justify-between text-sm">
+                <label class="flex items-center cursor-pointer group">
+                    <input 
+                        type="checkbox" 
+                        id="remember" 
+                        class="w-4 h-4 text-aima-600 border-slate-300 rounded focus:ring-aima-500 cursor-pointer"
+                    >
+                    <span class="ml-2 text-slate-600 group-hover:text-slate-800">记住我</span>
+                </label>
+                <button 
+                    type="button" 
+                    onclick="showForgotPassword()"
+                    class="text-aima-600 hover:text-aima-700 font-medium"
+                >
+                    忘记密码？
+                </button>
+            </div>
+
+            <!-- 登录按钮 -->
+            <button 
+                type="submit"
+                class="w-full bg-gradient-to-r from-aima-600 to-aima-700 hover:from-aima-700 hover:to-aima-800 text-white font-semibold py-3 rounded-lg shadow-lg shadow-aima-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span>登录系统</span>
+            </button>
+        </form>
+
+        <!-- 底部信息 -->
+        <div class="mt-8 text-center text-xs text-slate-400">
+            <p>© 2024 爱玛科技集团 | 版本 v1.0.0</p>
+        </div>
+    </div>
+
+    <!-- 忘记密码弹窗 -->
+    <div id="forgotPasswordModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
+            <!-- 关闭按钮 -->
+            <button 
+                onclick="closeForgotPassword()"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <!-- 标题 -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full mb-3">
+                    <i class="fa-solid fa-key text-orange-600 text-xl"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800">重置密码</h2>
+                <p class="text-sm text-slate-500 mt-1">请输入注册手机号获取验证码</p>
+            </div>
+
+            <!-- 重置密码表单 -->
+            <form onsubmit="handleResetPassword(event)" class="space-y-4">
+                <!-- 手机号 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">手机号</label>
+                    <input 
+                        type="tel" 
+                        id="resetPhone" 
+                        placeholder="请输入注册手机号" 
+                        maxlength="11"
+                        pattern="[0-9]{11}"
+                        required
+                        class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                    >
+                </div>
+
+                <!-- 验证码 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">验证码</label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="verifyCode" 
+                            placeholder="请输入验证码" 
+                            maxlength="6"
+                            required
+                            class="input-field flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="sendVerifyCode()"
+                            id="sendCodeBtn"
+                            class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium whitespace-nowrap transition-all"
+                        >
+                            获取验证码
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 新密码 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">新密码</label>
+                    <input 
+                        type="password" 
+                        id="newPassword" 
+                        placeholder="请输入新密码" 
+                        minlength="6"
+                        required
+                        class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                    >
+                </div>
+
+                <!-- 确认密码 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">确认密码</label>
+                    <input 
+                        type="password" 
+                        id="confirmPassword" 
+                        placeholder="请再次输入新密码" 
+                        minlength="6"
+                        required
+                        class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                    >
+                </div>
+
+                <!-- 提交按钮 -->
+                <button 
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg shadow-lg transition-all active:scale-95"
+                >
+                    确认重置
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 切换密码可见性
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
+
+        // 显示忘记密码弹窗
+        function showForgotPassword() {
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+        }
+
+        // 关闭忘记密码弹窗
+        function closeForgotPassword() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+            // 清空表单
+            document.getElementById('resetPhone').value = '';
+            document.getElementById('verifyCode').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+
+        // 发送验证码
+        let countdown = 0;
+        function sendVerifyCode() {
+            const phone = document.getElementById('resetPhone').value;
+            const btn = document.getElementById('sendCodeBtn');
+            
+            if (!phone || phone.length !== 11) {
+                alert('请输入正确的手机号');
+                return;
+            }
+
+            if (countdown > 0) {
+                return;
+            }
+
+            // 模拟发送验证码
+            alert('验证码已发送至 ' + phone);
+            
+            // 倒计时
+            countdown = 60;
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            const timer = setInterval(() => {
+                countdown--;
+                btn.textContent = countdown + 's 后重发';
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    btn.textContent = '获取验证码';
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }, 1000);
+        }
+
+        // 处理登录
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+
+            // 简单验证
+            if (phone.length !== 11) {
+                alert('请输入正确的手机号');
+                return;
+            }
+
+            if (password.length < 6) {
+                alert('密码长度不能少于6位');
+                return;
+            }
+
+            // 模拟登录成功
+            console.log('登录信息:', { phone, password, remember });
+            
+            // 显示加载提示
+            const btn = event.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 登录中...';
+            btn.disabled = true;
+
+            // 模拟网络延迟后跳转
+            setTimeout(() => {
+                // 跳转到首页
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+
+        // 处理重置密码
+        function handleResetPassword(event) {
+            event.preventDefault();
+            
+            const phone = document.getElementById('resetPhone').value;
+            const code = document.getElementById('verifyCode').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 验证
+            if (phone.length !== 11) {
+                alert('请输入正确的手机号');
+                return;
+            }
+
+            if (code.length !== 6) {
+                alert('请输入6位验证码');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                alert('密码长度不能少于6位');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+
+            // 模拟重置成功
+            alert('密码重置成功！请使用新密码登录');
+            closeForgotPassword();
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('forgotPasswordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeForgotPassword();
+            }
+        });
+    </script>
+
+</body>
+</html>
