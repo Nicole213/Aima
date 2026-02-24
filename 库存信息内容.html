@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存信息</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body.modal-active { overflow: hidden; }
+        .modal { transition: opacity 0.25s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 p-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <!-- 搜索区域 -->
+        <div class="p-5 border-b border-slate-100 flex-shrink-0">
+            <div class="flex flex-wrap items-end gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">物料名称/编码</label>
+                    <input type="text" id="search-material" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">小车编码</label>
+                    <input type="text" id="search-cart" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">关联入库订单</label>
+                    <input type="text" id="search-order" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">库区</label>
+                    <select id="search-zone" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-28 p-2.5">
+                        <option value="">全部</option>
+                        <option value="库区1">库区1</option>
+                        <option value="库区2">库区2</option>
+                        <option value="库区3">库区3</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">巷道</label>
+                    <select id="search-aisle" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-28 p-2.5">
+                        <option value="">全部</option>
+                        <option value="A01">巷道 A01</option>
+                        <option value="A02">巷道 A02</option>
+                        <option value="A03">巷道 A03</option>
+                        <option value="B02">巷道 B02</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">状态</label>
+                    <select id="search-status" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-28 p-2.5">
+                        <option value="">全部</option>
+                        <option value="在库">在库</option>
+                        <option value="入库中">入库中</option>
+                        <option value="出库中">出库中</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="searchInventory()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i> 查询
+                    </button>
+                    <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">
+                        <i class="fa-solid fa-file-excel mr-1"></i> 导出
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+                <thead class="bg-slate-50 text-xs uppercase text-slate-700 sticky top-0 shadow-sm z-10">
+                    <tr>
+                        <th class="px-6 py-3 whitespace-nowrap">序号</th>
+                        <th class="px-6 py-3 whitespace-nowrap">小车编码</th>
+                        <th class="px-6 py-3 whitespace-nowrap">物料编码</th>
+                        <th class="px-6 py-3 whitespace-nowrap">物料名称</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">数量</th>
+                        <th class="px-6 py-3 whitespace-nowrap">关联入库订单</th>
+                        <th class="px-6 py-3 whitespace-nowrap">分配库位</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">状态</th>
+                        <th class="px-6 py-3 whitespace-nowrap">入库时间</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="inventory-table-body">
+                    <!-- 动态渲染 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页组件 -->
+        <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+            <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800" id="pagination-info">6</span> 条记录</span>
+            <div class="flex items-center gap-2">
+                <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>上一页</button>
+                <button class="w-10 h-10 bg-blue-600 text-white rounded-lg font-bold text-sm">1</button>
+                <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: 库存详情 -->
+    <div id="modal-inventory-detail" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50" onclick="closeModal('inventory-detail')"></div>
+        <div class="modal-container bg-white w-full max-w-3xl mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-xl font-bold text-slate-800">库存详情</p>
+                    <div class="cursor-pointer" onclick="closeModal('inventory-detail')">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </div>
+                </div>
+                
+                <!-- 基本信息 -->
+                <div class="py-6">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">基本信息</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex">
+                            <span class="text-slate-500 w-32">小车编码:</span>
+                            <span class="font-bold" id="detail-cart">--</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-slate-500 w-32">物料编码:</span>
+                            <span class="font-bold" id="detail-code">--</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-slate-500 w-32">物料名称:</span>
+                            <span class="font-bold" id="detail-name">--</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-slate-500 w-32">数量:</span>
+                            <span class="font-bold text-blue-600" id="detail-qty">--</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-slate-500 w-32">关联入库订单:</span>
+                            <span class="font-bold" id="detail-order">--</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-slate-500 w-32">状态:</span>
+                            <span class="font-bold" id="detail-status">--</span>
+                        </div>
+                        <div class="flex col-span-2">
+                            <span class="text-slate-500 w-32">入库时间:</span>
+                            <span class="font-bold" id="detail-time">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 库位信息 -->
+                <div class="py-6 border-t">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">库位信息</h3>
+                    <div class="grid grid-cols-3 gap-4 text-sm">
+                        <div class="bg-slate-50 p-4 rounded">
+                            <p class="text-slate-500 text-xs mb-1">库区</p>
+                            <p class="font-bold text-lg" id="detail-zone">--</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded">
+                            <p class="text-slate-500 text-xs mb-1">巷道</p>
+                            <p class="font-bold text-lg" id="detail-aisle">--</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded">
+                            <p class="text-slate-500 text-xs mb-1">位置</p>
+                            <p class="font-bold text-lg" id="detail-position">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2 border-t">
+                    <button class="px-4 py-2 bg-slate-100 rounded" onclick="closeModal('inventory-detail')">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 数据 ---
+        let inventoryData = [
+            { id:1, cart:'C-10023', code:'M-BLK-001', name:'简易款车架-黑', qty:6, order:'IN-20260124-001', location:'库区1-A01-05', zone:'库区1', aisle:'A01', position:'05', status:'在库', time:'2025-01-24 10:30' },
+            { id:2, cart:'C-10024', code:'M-BLK-001', name:'简易款车架-黑', qty:6, order:'IN-20260124-001', location:'库区1-A01-06', zone:'库区1', aisle:'A01', position:'06', status:'在库', time:'2025-01-24 10:45' },
+            { id:3, cart:'C-10030', code:'M-WHT-002', name:'豪华款车架-白', qty:6, order:'IN-20260123-999', location:'库区2-B02-10', zone:'库区2', aisle:'B02', position:'10', status:'在库', time:'2025-01-23 11:20' },
+            { id:4, cart:'C-10035', code:'M-SLV-004', name:'经典款车架-银', qty:6, order:'IN-20260125-005', location:'库区1-A03-12', zone:'库区1', aisle:'A03', position:'12', status:'出库中', time:'2025-01-25 14:15' },
+            { id:5, cart:'C-10040', code:'M-BLK-001', name:'简易款车架-黑', qty:6, order:'IN-20260124-001', location:'库区1-A01-08', zone:'库区1', aisle:'A01', position:'08', status:'在库', time:'2025-01-24 11:05' },
+            { id:6, cart:'C-10045', code:'M-WHT-002', name:'豪华款车架-白', qty:6, order:'IN-20260123-999', location:'库区2-B02-15', zone:'库区2', aisle:'B02', position:'15', status:'入库中', time:'2025-01-23 11:45' }
+        ];
+
+        let filteredData = [...inventoryData];
+
+        // --- Modal 函数 ---
+        function toggleModal(id) {
+            document.getElementById('modal-'+id).classList.toggle('opacity-0');
+            document.getElementById('modal-'+id).classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+        }
+
+        function closeModal(id) {
+            document.getElementById('modal-'+id).classList.add('opacity-0');
+            document.getElementById('modal-'+id).classList.add('pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+
+        // --- 渲染表格 ---
+        function renderTable() {
+            const tbody = document.getElementById('inventory-table-body');
+            tbody.innerHTML = filteredData.map((item, i) => {
+                // 状态标签
+                let statusBadge = '';
+                if (item.status === '在库') {
+                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">在库</span>';
+                } else if (item.status === '入库中') {
+                    statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">入库中</span>';
+                } else if (item.status === '出库中') {
+                    statusBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">出库中</span>';
+                }
+                
+                return `<tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4">${i+1}</td>
+                    <td class="px-6 py-4 font-mono font-bold">${item.cart}</td>
+                    <td class="px-6 py-4 font-mono text-xs">${item.code}</td>
+                    <td class="px-6 py-4 font-medium">${item.name}</td>
+                    <td class="px-6 py-4 text-center font-bold text-blue-600">${item.qty}</td>
+                    <td class="px-6 py-4 text-xs">${item.order}</td>
+                    <td class="px-6 py-4 text-xs">${item.location}</td>
+                    <td class="px-6 py-4 text-center">${statusBadge}</td>
+                    <td class="px-6 py-4 text-xs">${item.time}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="viewDetail(${item.id})" class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm mx-1" title="查看详情">
+                            详情
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // 更新分页信息
+            document.getElementById('pagination-info').innerText = filteredData.length;
+        }
+
+        // --- 查看详情 ---
+        function viewDetail(id) {
+            const item = inventoryData.find(x => x.id === id);
+            if (!item) return;
+
+            document.getElementById('detail-cart').innerText = item.cart;
+            document.getElementById('detail-code').innerText = item.code;
+            document.getElementById('detail-name').innerText = item.name;
+            document.getElementById('detail-qty').innerText = item.qty;
+            document.getElementById('detail-order').innerText = item.order;
+            document.getElementById('detail-time').innerText = item.time;
+            document.getElementById('detail-zone').innerText = item.zone;
+            document.getElementById('detail-aisle').innerText = item.aisle;
+            document.getElementById('detail-position').innerText = item.position;
+            
+            // 状态标签
+            const statusEl = document.getElementById('detail-status');
+            if (item.status === '在库') {
+                statusEl.innerHTML = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">在库</span>';
+            } else if (item.status === '入库中') {
+                statusEl.innerHTML = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">入库中</span>';
+            } else if (item.status === '出库中') {
+                statusEl.innerHTML = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">出库中</span>';
+            }
+
+            toggleModal('inventory-detail');
+        }
+
+        // --- 搜索功能 ---
+        function searchInventory() {
+            const material = document.getElementById('search-material').value.toLowerCase();
+            const cart = document.getElementById('search-cart').value.toLowerCase();
+            const order = document.getElementById('search-order').value.toLowerCase();
+            const zone = document.getElementById('search-zone').value;
+            const aisle = document.getElementById('search-aisle').value;
+            const status = document.getElementById('search-status').value;
+
+            filteredData = inventoryData.filter(item => {
+                const matchMaterial = !material || 
+                    item.code.toLowerCase().includes(material) || 
+                    item.name.toLowerCase().includes(material);
+                const matchCart = !cart || item.cart.toLowerCase().includes(cart);
+                const matchOrder = !order || item.order.toLowerCase().includes(order);
+                const matchZone = !zone || item.zone === zone;
+                const matchAisle = !aisle || item.aisle === aisle;
+                const matchStatus = !status || item.status === status;
+
+                return matchMaterial && matchCart && matchOrder && matchZone && matchAisle && matchStatus;
+            });
+
+            renderTable();
+            
+            if (filteredData.length === 0) {
+                document.getElementById('inventory-table-body').innerHTML = 
+                    '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-400">未找到匹配的库存记录</td></tr>';
+            }
+        }
+
+        // --- 导出功能 ---
+        function exportData() {
+            // 模拟导出Excel
+            const csvContent = [
+                ['序号', '小车编码', '物料编码', '物料名称', '数量', '关联入库订单', '分配库位', '入库时间'],
+                ...filteredData.map((item, i) => [
+                    i+1, item.cart, item.code, item.name, item.qty, item.order, item.location, item.time
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `库存信息_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            
+            alert('库存数据已导出');
+        }
+
+        // --- 初始化 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>载具管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emma: {
+                            500: '#ec4899', 
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow: hidden; }
+    </style>
+</head>
+<body class="bg-slate-100 p-6 h-screen flex flex-col">
+    <!-- 载具管理主界面 -->
+    <div class="h-full flex flex-col">
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-4 gap-4 mb-4 flex-shrink-0">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex justify-between items-center">
+                <span class="text-blue-900 font-bold">载具总数</span>
+                <span class="text-2xl font-bold text-blue-600" id="stat-car-total">200</span>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg border border-green-100 flex justify-between items-center">
+                <span class="text-green-900 font-bold">空闲数量</span>
+                <span class="text-2xl font-bold text-green-600" id="stat-car-idle">120</span>
+            </div>
+            <div class="bg-orange-50 p-4 rounded-lg border border-orange-100 flex justify-between items-center">
+                <span class="text-orange-900 font-bold">占用数量</span>
+                <span class="text-2xl font-bold text-orange-600" id="stat-car-occupied">80</span>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 overflow-hidden">
+            <!-- 搜索区域 -->
+            <div class="p-5 border-b border-slate-100 flex-shrink-0">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">小车编码</label>
+                        <input type="text" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg block w-32 p-2.5">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">状态</label>
+                        <select class="bg-slate-50 border border-slate-300 text-sm rounded-lg block w-24 p-2.5">
+                            <option value="">全部</option>
+                            <option value="idle">空闲</option>
+                            <option value="occupied">占用</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">所属库区</label>
+                        <select class="bg-slate-50 border border-slate-300 text-sm rounded-lg block w-32 p-2.5">
+                            <option value="">全部</option>
+                            <option>库区 1</option>
+                            <option>库区 2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">物料名称/编码</label>
+                        <input type="text" placeholder="编码/名称" class="bg-slate-50 border border-slate-300 text-sm rounded-lg block w-32 p-2.5">
+                    </div>
+                    <div class="flex gap-2 ml-auto">
+                        <button class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                            <i class="fa-solid fa-magnifying-glass mr-1"></i> 查询
+                        </button>
+                        <button onclick="openCarrierModal('add')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 ml-4">
+                            <i class="fa-solid fa-plus mr-1"></i> 新增载具
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表格 -->
+            <div class="flex-1 overflow-auto">
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-700 sticky top-0 shadow-sm z-10">
+                        <tr>
+                            <th class="px-6 py-3 whitespace-nowrap">序号</th>
+                            <th class="px-6 py-3 whitespace-nowrap">小车编码</th>
+                            <th class="px-6 py-3 whitespace-nowrap text-center">状态</th>
+                            <th class="px-6 py-3 whitespace-nowrap">物料编码</th>
+                            <th class="px-6 py-3 whitespace-nowrap">物料名称</th>
+                            <th class="px-6 py-3 whitespace-nowrap text-center">数量</th>
+                            <th class="px-6 py-3 whitespace-nowrap">当前位置</th>
+                            <th class="px-6 py-3 whitespace-nowrap">关联入库订单</th>
+                            <th class="px-6 py-3 whitespace-nowrap">更新时间</th>
+                            <th class="px-6 py-3 whitespace-nowrap text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="carrier-table-body">
+                        <!-- 数据将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页组件 -->
+            <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+                <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800">1</span> 条记录</span>
+                <div class="flex items-center gap-2">
+                    <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>上一页</button>
+                    <button class="w-10 h-10 bg-blue-600 text-white rounded-lg font-bold text-sm">1</button>
+                    <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>下一页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑载具弹窗 -->
+    <div id="modal-carrier-form" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50" onclick="closeModal('carrier-form')"></div>
+        <div class="modal-container bg-white w-full max-w-md mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-xl font-bold text-slate-800" id="modal-carrier-title">新增载具</p>
+                    <div class="cursor-pointer z-50" onclick="closeModal('carrier-form')">
+                        <i class="fa-solid fa-xmark text-slate-500 hover:text-slate-800 text-xl"></i>
+                    </div>
+                </div>
+                <form class="py-6 grid grid-cols-1 gap-6">
+                    <div id="field-car-code">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">小车编码 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-car-code" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="例如: C-10001">
+                    </div>
+                    <div id="field-car-loc" class="hidden">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">当前位置 (搜索)</label>
+                        <input type="text" list="loc-list" id="input-car-loc" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                        <datalist id="loc-list">
+                            <option value="空挂库区-01巷-01">
+                            <option value="库区1-02巷-05">
+                        </datalist>
+                    </div>
+                </form>
+                <div class="flex justify-end pt-2 border-t mt-2 gap-2">
+                    <button class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 text-sm" onclick="closeModal('carrier-form')">取消</button>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm" onclick="saveCarrier()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认删除弹窗 -->
+    <div id="modal-confirm" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50"></div>
+        <div class="modal-container bg-white w-full max-w-sm mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-lg font-bold text-slate-800" id="confirm-title">确认删除载具</p>
+                </div>
+                <p class="text-sm text-slate-600 my-4" id="confirm-msg">确定要执行此操作吗？</p>
+                <div class="flex justify-end pt-2 gap-2">
+                    <button class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 text-sm" onclick="closeModal('confirm')">取消</button>
+                    <button id="confirm-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        let carriers = [
+            { id: 1, code: 'C-10001', status: 'occupied', matCode: 'M-001', matName: '简易款车架', qty: 6, loc: '库区1-01巷-01', order: 'IN-20260124-001', updateTime: '2025-01-24 10:30' },
+            { id: 2, code: 'C-10002', status: 'idle', matCode: '-', matName: '-', qty: 0, loc: '空挂库区-01巷-05', order: '-', updateTime: '2025-01-24 09:00' },
+            { id: 3, code: 'C-10003', status: 'occupied', matCode: 'M-002', matName: '豪华款车架', qty: 4, loc: '库区2-05巷-10', order: 'IN-20260124-002', updateTime: '2025-01-24 11:15' }
+        ];
+
+        // 渲染表格
+        function renderCarrierTable() {
+            const tbody = document.getElementById('carrier-table-body');
+            tbody.innerHTML = '';
+            
+            carriers.forEach((c, index) => {
+                const statusHtml = c.status === 'occupied' 
+                    ? `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">占用</span>` 
+                    : `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs font-bold">空闲</span>`;
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-4">${index + 1}</td>
+                    <td class="px-6 py-4 font-mono font-bold">${c.code}</td>
+                    <td class="px-6 py-4 text-center">${statusHtml}</td>
+                    <td class="px-6 py-4 font-mono">${c.matCode}</td>
+                    <td class="px-6 py-4 font-medium">${c.matName}</td>
+                    <td class="px-6 py-4 text-center font-bold">${c.qty}</td>
+                    <td class="px-6 py-4">${c.loc}</td>
+                    <td class="px-6 py-4 font-mono text-xs">${c.order}</td>
+                    <td class="px-6 py-4 text-xs text-slate-500">${c.updateTime}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm mx-1" onclick="openCarrierModal('edit', ${c.id})" title="编辑">
+                            编辑
+                        </button>
+                        <button class="text-red-600 hover:text-red-700 px-2 py-1 text-sm mx-1" onclick="deleteCarrier(${c.id})" title="删除">
+                            删除
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // 更新统计数据
+            document.getElementById('stat-car-total').innerText = carriers.length;
+            document.getElementById('stat-car-idle').innerText = carriers.filter(c => c.status === 'idle').length;
+            document.getElementById('stat-car-occupied').innerText = carriers.filter(c => c.status === 'occupied').length;
+        }
+
+        // 弹窗控制
+        function toggleModal(id) {
+            const modal = document.getElementById(`modal-${id}`);
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(`modal-${id}`);
+            modal.classList.add('opacity-0');
+            modal.classList.add('pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+
+        // 打开新增/编辑弹窗
+        function openCarrierModal(mode, id) {
+            toggleModal('carrier-form');
+            const title = document.getElementById('modal-carrier-title');
+            const fCode = document.getElementById('field-car-code');
+            const fLoc = document.getElementById('field-car-loc');
+            
+            if (mode === 'add') {
+                title.innerText = "新增载具";
+                fCode.classList.remove('hidden');
+                fLoc.classList.add('hidden');
+                document.getElementById('input-car-code').value = '';
+            } else {
+                title.innerText = "编辑载具位置";
+                fCode.classList.add('hidden');
+                fLoc.classList.remove('hidden');
+                const c = carriers.find(x => x.id === id);
+                document.getElementById('input-car-loc').value = c.loc;
+            }
+        }
+
+        // 保存载具
+        function saveCarrier() {
+            closeModal('carrier-form');
+            alert('保存成功');
+            renderCarrierTable();
+        }
+
+        // 删除载具
+        function deleteCarrier(id) {
+            const c = carriers.find(x => x.id === id);
+            
+            if (c.status === 'occupied') {
+                alert('无法删除：该小车当前有承载物料！');
+                return;
+            }
+            
+            toggleModal('confirm');
+            document.getElementById('confirm-title').innerText = "确认删除载具";
+            document.getElementById('confirm-msg').innerText = `确定要删除空车 [${c.code}] 吗？`;
+            
+            document.getElementById('confirm-btn').onclick = () => {
+                carriers = carriers.filter(x => x.id !== id);
+                renderCarrierTable();
+                closeModal('confirm');
+                alert("删除成功");
+            };
+        }
+
+        // 页面加载时渲染表格
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCarrierTable();
+        });
+    </script>
+</body>
+</html>

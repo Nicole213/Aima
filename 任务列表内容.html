@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务列表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50">
+    <div class="p-6">
+        <!-- Search Filters -->
+        <div class="bg-white rounded-lg shadow mb-6 p-6">
+            <div class="flex items-end gap-4 mb-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">任务编号</label>
+                    <input type="text" id="filter-task-no" placeholder="请输入任务编号" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">任务类型</label>
+                    <select id="filter-task-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="入库">入库</option>
+                        <option value="出库">出库</option>
+                        <option value="倒库">倒库</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">关联订单号</label>
+                    <input type="text" id="filter-order-no" placeholder="请输入订单号" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">小车编码</label>
+                    <input type="text" id="filter-cart-code" placeholder="请输入小车编码" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">物料名称/编码</label>
+                    <input type="text" id="filter-material-code" placeholder="请输入物料名称或编码" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">任务状态</label>
+                    <select id="filter-task-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="待执行">待执行</option>
+                        <option value="执行中">执行中</option>
+                        <option value="已完成">已完成</option>
+                        <option value="异常">异常</option>
+                        <option value="已取消">已取消</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-end gap-4">
+                <div class="w-96">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">执行时间</label>
+                    <div class="flex items-center gap-2">
+                        <input type="date" id="filter-start-date" 
+                               class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-slate-500">至</span>
+                        <input type="date" id="filter-end-date" 
+                               class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="flex gap-3 ml-auto">
+                    <button onclick="searchData()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                        <i class="fas fa-search mr-2"></i>查询
+                    </button>
+                    <button onclick="resetFilters()" class="px-6 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap">
+                        <i class="fas fa-redo mr-2"></i>重置
+                    </button>
+                    <button onclick="exportData()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+                        <i class="fas fa-file-excel mr-2"></i>导出
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">序号</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">任务编号</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">任务类型</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">小车编码</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">关联订单号</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">物料编码</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">物料名称</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">物料数量</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">起始位置</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">目标位置</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">执行人员</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">任务状态</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">任务发起时间</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">完成时间</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-200">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页组件 -->
+            <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800">14</span> 条记录</span>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-sm text-slate-600">每页显示</span>
+                    <select class="bg-white border-2 border-slate-300 text-slate-800 font-semibold text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                        <option value="10" selected>10 条</option>
+                        <option value="20">20 条</option>
+                        <option value="50">50 条</option>
+                        <option value="100">100 条</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <!-- 首页按钮 -->
+                    <button class="px-3 py-2 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-sm shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa-solid fa-angles-left"></i>
+                    </button>
+                    
+                    <!-- 上一页按钮 -->
+                    <button class="px-4 py-2 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-sm shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa-solid fa-chevron-left mr-1"></i>上一页
+                    </button>
+                    
+                    <!-- 页码显示 -->
+                    <div class="flex items-center gap-1">
+                        <button class="w-10 h-10 bg-blue-600 text-white rounded-lg font-bold text-sm shadow-md">1</button>
+                        <button class="w-10 h-10 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-sm shadow-sm active:scale-95">2</button>
+                    </div>
+                    
+                    <!-- 下一页按钮 -->
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-semibold text-sm shadow-md active:scale-95">
+                        下一页<i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                    
+                    <!-- 末页按钮 -->
+                    <button class="px-3 py-2 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-sm shadow-sm active:scale-95">
+                        <i class="fa-solid fa-angles-right"></i>
+                    </button>
+                    
+                    <span class="text-slate-300 mx-1">|</span>
+                    
+                    <!-- 跳转页码 -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-slate-600">跳转到</span>
+                        <input type="number" min="1" max="2" value="1" class="w-16 bg-white border-2 border-slate-300 text-slate-800 font-semibold text-sm rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center">
+                        <button class="px-3 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm active:scale-95">
+                            GO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-3/5 max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-slate-800">任务详情</h3>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="text-sm text-slate-500">任务编号</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-task-no"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">任务类型</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-task-type"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">小车编码</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-cart-code"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">任务状态</label>
+                        <p class="text-base font-medium" id="detail-status"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">物料编码</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-material-code"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">物料名称</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-material-name"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">数量</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-quantity"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">关联订单</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-order-no"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">起始位置</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-start-location"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">目标位置</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-target-location"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">执行人员</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-executor"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">创建时间</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-create-time"></p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-500">完成时间</label>
+                        <p class="text-base font-medium text-slate-800" id="detail-complete-time"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data
+        const mockData = [
+            {
+                id: 1,
+                taskNo: 'TASK-2024-001',
+                taskType: '入库',
+                cartCode: 'CART-001',
+                orderNo: 'IN-2024-001',
+                materialCode: 'MAT-001',
+                materialName: '电机组件A',
+                quantity: 50,
+                startLocation: '上件口1',
+                targetLocation: '库区1-A01-05',
+                executor: '张三',
+                status: '执行中',
+                createTime: '2024-01-27 10:30:00',
+                completeTime: '-'
+            },
+            {
+                id: 2,
+                taskNo: 'TASK-2024-002',
+                taskType: '出库',
+                cartCode: 'CART-002',
+                orderNo: 'OUT-2024-088',
+                materialCode: 'MAT-002',
+                materialName: '车架部件B',
+                quantity: 30,
+                startLocation: '库区1-A01-06',
+                targetLocation: '下件口3',
+                executor: '李四',
+                status: '已完成',
+                createTime: '2024-01-27 09:15:00',
+                completeTime: '2024-01-27 09:45:00'
+            },
+            {
+                id: 3,
+                taskNo: 'TASK-2024-003',
+                taskType: '倒库',
+                cartCode: 'CART-003',
+                orderNo: '-',
+                materialCode: 'MAT-003',
+                materialName: '轮胎组件C',
+                quantity: 40,
+                startLocation: '库区2-A02-01',
+                targetLocation: '库区1-A01-03',
+                executor: '王五',
+                status: '待执行',
+                createTime: '2024-01-27 11:00:00',
+                completeTime: '-'
+            },
+            {
+                id: 4,
+                taskNo: 'TASK-2024-004',
+                taskType: '入库',
+                cartCode: 'CART-004',
+                orderNo: 'IN-2024-002',
+                materialCode: 'MAT-001',
+                materialName: '电机组件A',
+                quantity: 60,
+                startLocation: '上件口2',
+                targetLocation: '库区1-A02-04',
+                executor: '赵六',
+                status: '已完成',
+                createTime: '2024-01-27 08:20:00',
+                completeTime: '2024-01-27 08:50:00'
+            },
+            {
+                id: 5,
+                taskNo: 'TASK-2024-005',
+                taskType: '出库',
+                cartCode: 'CART-005',
+                orderNo: 'OUT-2024-089',
+                materialCode: 'MAT-004',
+                materialName: '座椅组件D',
+                quantity: 25,
+                startLocation: '库区1-A03-02',
+                targetLocation: '下件口1',
+                executor: '孙七',
+                status: '异常',
+                createTime: '2024-01-27 10:00:00',
+                completeTime: '-'
+            },
+            {
+                id: 6,
+                taskNo: 'TASK-2024-006',
+                taskType: '入库',
+                cartCode: 'CART-006',
+                orderNo: 'IN-2024-003',
+                materialCode: 'MAT-005',
+                materialName: '刹车系统E',
+                quantity: 45,
+                startLocation: '上件口1',
+                targetLocation: '库区2-A01-08',
+                executor: '周八',
+                status: '待执行',
+                createTime: '2024-01-27 11:15:00',
+                completeTime: '-'
+            },
+            {
+                id: 7,
+                taskNo: 'TASK-2024-007',
+                taskType: '倒库',
+                cartCode: 'CART-007',
+                orderNo: '-',
+                materialCode: 'MAT-002',
+                materialName: '车架部件B',
+                quantity: 35,
+                startLocation: '库区3-A04-01',
+                targetLocation: '库区1-A01-09',
+                executor: '吴九',
+                status: '执行中',
+                createTime: '2024-01-27 10:45:00',
+                completeTime: '-'
+            },
+            {
+                id: 8,
+                taskNo: 'TASK-2024-008',
+                taskType: '出库',
+                cartCode: 'CART-008',
+                orderNo: 'OUT-2024-090',
+                materialCode: 'MAT-006',
+                materialName: '灯光系统F',
+                quantity: 20,
+                startLocation: '库区2-A02-05',
+                targetLocation: '下件口2',
+                executor: '郑十',
+                status: '已完成',
+                createTime: '2024-01-27 07:30:00',
+                completeTime: '2024-01-27 08:00:00'
+            },
+            {
+                id: 9,
+                taskNo: 'TASK-2024-009',
+                taskType: '入库',
+                cartCode: 'CART-009',
+                orderNo: 'IN-2024-004',
+                materialCode: 'MAT-007',
+                materialName: '仪表盘G',
+                quantity: 55,
+                startLocation: '上件口3',
+                targetLocation: '库区1-A03-06',
+                executor: '钱十一',
+                status: '异常',
+                createTime: '2024-01-27 09:50:00',
+                completeTime: '-'
+            },
+            {
+                id: 10,
+                taskNo: 'TASK-2024-010',
+                taskType: '倒库',
+                cartCode: 'CART-010',
+                orderNo: '-',
+                materialCode: 'MAT-003',
+                materialName: '轮胎组件C',
+                quantity: 38,
+                startLocation: '库区2-A03-03',
+                targetLocation: '库区1-A02-07',
+                executor: '陈十二',
+                status: '待执行',
+                createTime: '2024-01-27 11:30:00',
+                completeTime: '-'
+            },
+            {
+                id: 11,
+                taskNo: 'TASK-2024-011',
+                taskType: '出库',
+                cartCode: 'CART-011',
+                orderNo: 'OUT-2024-091',
+                materialCode: 'MAT-001',
+                materialName: '电机组件A',
+                quantity: 42,
+                startLocation: '库区1-A01-05',
+                targetLocation: '下件口3',
+                executor: '张三',
+                status: '执行中',
+                createTime: '2024-01-27 10:50:00',
+                completeTime: '-'
+            },
+            {
+                id: 12,
+                taskNo: 'TASK-2024-012',
+                taskType: '入库',
+                cartCode: 'CART-012',
+                orderNo: 'IN-2024-005',
+                materialCode: 'MAT-008',
+                materialName: '音响系统H',
+                quantity: 28,
+                startLocation: '上件口2',
+                targetLocation: '库区2-A04-02',
+                executor: '李四',
+                status: '已完成',
+                createTime: '2024-01-27 06:45:00',
+                completeTime: '2024-01-27 07:15:00'
+            },
+            {
+                id: 13,
+                taskNo: 'TASK-2024-013',
+                taskType: '出库',
+                cartCode: 'CART-013',
+                orderNo: 'OUT-2024-092',
+                materialCode: 'MAT-002',
+                materialName: '车架部件B',
+                quantity: 32,
+                startLocation: '库区1-A02-03',
+                targetLocation: '下件口2',
+                executor: '张三',
+                status: '已取消',
+                createTime: '2024-01-27 11:20:00',
+                completeTime: '-'
+            },
+            {
+                id: 14,
+                taskNo: 'TASK-2024-014',
+                taskType: '倒库',
+                cartCode: 'CART-014',
+                orderNo: '-',
+                materialCode: 'MAT-005',
+                materialName: '刹车系统E',
+                quantity: 48,
+                startLocation: '库区3-A01-02',
+                targetLocation: '库区2-A03-05',
+                executor: '王五',
+                status: '已取消',
+                createTime: '2024-01-27 10:10:00',
+                completeTime: '-'
+            }
+        ];
+
+        let currentData = [...mockData];
+
+        // Render table
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="15" class="px-4 py-8 text-center text-slate-500">暂无数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => {
+                // 根据状态决定显示哪些操作按钮
+                let actionButtons = '';
+                
+                // 强制完成：待执行、执行中状态才有
+                if (item.status === '待执行' || item.status === '执行中') {
+                    actionButtons += `
+                        <button onclick="forceComplete(${item.id})" 
+                                class="text-green-600 hover:text-green-700 px-2 py-1 text-sm" 
+                                title="强制完成">
+                            强制完成
+                        </button>
+                    `;
+                }
+                
+                // 重下发：执行中、异常状态才有
+                if (item.status === '执行中' || item.status === '异常') {
+                    actionButtons += `
+                        <button onclick="reissue(${item.id})" 
+                                class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm" 
+                                title="重下发">
+                            重下发
+                        </button>
+                    `;
+                }
+                
+                // 取消：待执行、执行中状态才有
+                if (item.status === '待执行' || item.status === '执行中') {
+                    actionButtons += `
+                        <button onclick="cancelTask(${item.id})" 
+                                class="text-red-600 hover:text-red-700 px-2 py-1 text-sm" 
+                                title="取消">
+                            取消
+                        </button>
+                    `;
+                }
+                
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 text-sm text-slate-600">${index + 1}</td>
+                        <td class="px-4 py-3 text-sm font-medium text-slate-800">${item.taskNo}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${
+                                item.taskType === '入库' ? 'bg-green-100 text-green-700' :
+                                item.taskType === '出库' ? 'bg-blue-100 text-blue-700' :
+                                'bg-purple-100 text-purple-700'
+                            }">
+                                ${item.taskType}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-mono text-slate-800">${item.cartCode}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${item.orderNo}</td>
+                        <td class="px-4 py-3 text-sm font-mono text-slate-600">${item.materialCode}</td>
+                        <td class="px-4 py-3 text-sm text-slate-800">${item.materialName}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${item.quantity}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${item.startLocation}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${item.targetLocation}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${item.executor}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${
+                                item.status === '待执行' ? 'bg-yellow-100 text-yellow-700' :
+                                item.status === '执行中' ? 'bg-blue-100 text-blue-700' :
+                                item.status === '异常' ? 'bg-red-100 text-red-700' :
+                                item.status === '已取消' ? 'bg-gray-100 text-gray-700' :
+                                'bg-green-100 text-green-700'
+                            }">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-slate-500">${item.createTime}</td>
+                        <td class="px-4 py-3 text-sm text-slate-500">${item.completeTime}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex gap-2">
+                                ${actionButtons || '<span class="text-slate-400 text-sm">-</span>'}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Search data
+        function searchData() {
+            const taskNo = document.getElementById('filter-task-no').value.toLowerCase();
+            const taskType = document.getElementById('filter-task-type').value;
+            const orderNo = document.getElementById('filter-order-no').value.toLowerCase();
+            const cartCode = document.getElementById('filter-cart-code').value.toLowerCase();
+            const materialCode = document.getElementById('filter-material-code').value.toLowerCase();
+            const status = document.getElementById('filter-task-status').value;
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+
+            currentData = mockData.filter(item => {
+                let dateMatch = true;
+                if (startDate || endDate) {
+                    const itemDate = item.createTime.split(' ')[0]; // Extract date part
+                    if (startDate && itemDate < startDate) dateMatch = false;
+                    if (endDate && itemDate > endDate) dateMatch = false;
+                }
+
+                // 物料名称或编码模糊搜索
+                const materialMatch = !materialCode || 
+                    item.materialCode.toLowerCase().includes(materialCode) || 
+                    item.materialName.toLowerCase().includes(materialCode);
+
+                return (!taskNo || item.taskNo.toLowerCase().includes(taskNo)) &&
+                       (!taskType || item.taskType === taskType) &&
+                       (!orderNo || item.orderNo.toLowerCase().includes(orderNo)) &&
+                       (!cartCode || item.cartCode.toLowerCase().includes(cartCode)) &&
+                       materialMatch &&
+                       (!status || item.status === status) &&
+                       dateMatch;
+            });
+
+            renderTable(currentData);
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filter-task-no').value = '';
+            document.getElementById('filter-task-type').value = '';
+            document.getElementById('filter-order-no').value = '';
+            document.getElementById('filter-cart-code').value = '';
+            document.getElementById('filter-material-code').value = '';
+            document.getElementById('filter-task-status').value = '';
+            document.getElementById('filter-start-date').value = '';
+            document.getElementById('filter-end-date').value = '';
+            currentData = [...mockData];
+            renderTable(currentData);
+        }
+
+        // Export data
+        function exportData() {
+            alert('导出功能：将当前筛选的数据导出为Excel文件');
+        }
+
+        // View detail
+        function viewDetail(id) {
+            const item = mockData.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('detail-task-no').textContent = item.taskNo;
+            document.getElementById('detail-task-type').textContent = item.taskType;
+            document.getElementById('detail-cart-code').textContent = item.cartCode;
+            document.getElementById('detail-material-code').textContent = item.materialCode;
+            document.getElementById('detail-material-name').textContent = item.materialName;
+            document.getElementById('detail-quantity').textContent = item.quantity;
+            document.getElementById('detail-order-no').textContent = item.orderNo;
+            document.getElementById('detail-start-location').textContent = item.startLocation;
+            document.getElementById('detail-target-location').textContent = item.targetLocation;
+            document.getElementById('detail-executor').textContent = item.executor;
+            document.getElementById('detail-create-time').textContent = item.createTime;
+            document.getElementById('detail-complete-time').textContent = item.completeTime;
+
+            const statusElement = document.getElementById('detail-status');
+            statusElement.textContent = item.status;
+            statusElement.className = `px-2 py-1 rounded text-xs font-medium inline-block ${
+                item.status === '待执行' ? 'bg-yellow-100 text-yellow-700' :
+                item.status === '执行中' ? 'bg-blue-100 text-blue-700' :
+                item.status === '异常' ? 'bg-red-100 text-red-700' :
+                item.status === '已取消' ? 'bg-gray-100 text-gray-700' :
+                'bg-green-100 text-green-700'
+            }`;
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        // Close detail modal
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        // 强制完成：待执行、执行中状态才有，操作后任务状态变为已完成
+        function forceComplete(id) {
+            if (!confirm('确认要强制完成该任务吗？')) return;
+            
+            const item = mockData.find(d => d.id === id);
+            if (item) {
+                item.status = '已完成';
+                item.completeTime = new Date().toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).replace(/\//g, '-');
+                
+                // 重新渲染表格
+                searchData();
+                alert('任务已强制完成');
+            }
+        }
+
+        // 重下发：执行中、异常状态才有，操作后状态变为执行中
+        function reissue(id) {
+            if (!confirm('确认要重新下发该任务吗？')) return;
+            
+            const item = mockData.find(d => d.id === id);
+            if (item) {
+                item.status = '执行中';
+                
+                // 重新渲染表格
+                searchData();
+                alert('任务已重新下发');
+            }
+        }
+
+        // 取消：待执行、执行中状态才有，操作后状态变为已取消
+        function cancelTask(id) {
+            if (!confirm('确认要取消该任务吗？')) return;
+            
+            const item = mockData.find(d => d.id === id);
+            if (item) {
+                item.status = '已取消';
+                
+                // 重新渲染表格
+                searchData();
+                alert('任务已取消');
+            }
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            renderTable(currentData);
+        });
+    </script>
+</body>
+</html>

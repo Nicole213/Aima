@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爱玛 WMS 悬链库管理系统 - 整合版</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emma: {
+                            500: '#ec4899', 
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Navigation Active State */
+        .nav-item.active {
+            color: #fff;
+            background-color: rgba(255,255,255,0.05);
+            border-right: 3px solid #ec4899;
+        }
+
+        /* Submenu Animation */
+        .submenu { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease-out; 
+        }
+        .submenu.open { 
+            max-height: 500px; 
+            transition: max-height 0.5s ease-in; 
+        }
+        
+        .rotate-icon { transition: transform 0.3s; }
+        .group.open .rotate-icon { transform: rotate(180deg); }
+
+        /* Iframe Container */
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-xl z-20 flex-shrink-0">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
+            <i class="fa-solid fa-bolt text-emma-500 text-2xl mr-3"></i>
+            <span class="text-xl font-bold text-white tracking-wider">台州摩擦线系统</span>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex-1 overflow-y-auto py-4 select-none">
+            
+            <!-- Dashboard -->
+            <a href="#" onclick="loadPage('首页内容.html', '首页')" id="nav-dashboard" class="nav-item active flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+                <i class="fa-solid fa-chart-pie w-6"></i>
+                <span class="font-medium">首页</span>
+            </a>
+
+            <!-- Operations -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">现场作业</div>
+            
+            <a href="#" onclick="loadPage('上件作业内容.html', '上件作业')" id="nav-inbound-ops" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+                <i class="fa-solid fa-arrow-right-to-bracket w-6 text-green-500"></i>
+                <span class="font-medium">上件作业</span>
+            </a>
+            
+            <a href="#" onclick="loadPage('下件作业内容.html', '下件作业')" id="nav-outbound-ops" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+                <i class="fa-solid fa-arrow-right-from-bracket w-6 text-blue-500"></i>
+                <span class="font-medium">下件作业</span>
+            </a>
+
+            <!-- Visual Map -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">可视化监控</div>
+            
+            <a href="#" onclick="loadPage('库区地图内容.html', '库区地图')" id="nav-map" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+                <i class="fa-solid fa-map-location-dot w-6"></i>
+                <span class="font-medium">库区地图</span>
+            </a>
+
+            <!-- Base Data -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">基础数据</div>
+
+            <div class="group" id="group-base">
+                <div onclick="toggleSubmenu('base')" class="flex items-center justify-between px-6 py-3 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-database w-6"></i>
+                        <span class="font-medium">基础数据</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs rotate-icon"></i>
+                </div>
+                <div class="submenu bg-slate-950" id="sub-base">
+                    <a href="#" onclick="loadPage('物料管理内容.html', '物料管理')" id="nav-materials" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">物料管理</a>
+                    <a href="#" onclick="loadPage('载具管理内容.html', '载具管理')" id="nav-carriers" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">载具管理</a>
+                    <a href="#" onclick="loadPage('库区管理内容.html', '库区管理')" id="nav-zones" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">库区管理</a>
+                    <a href="#" onclick="loadPage('巷道管理内容.html', '巷道管理')" id="nav-aisles" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">巷道管理</a>
+                </div>
+            </div>
+
+            <!-- Orders -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">订单管理</div>
+            
+            <div class="group" id="group-orders">
+                <div onclick="toggleSubmenu('orders')" class="flex items-center justify-between px-6 py-3 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-file-lines w-6 text-purple-500"></i>
+                        <span class="font-medium">订单管理</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs rotate-icon"></i>
+                </div>
+                <div class="submenu bg-slate-950" id="sub-orders">
+                    <a href="#" onclick="loadPage('入库订单内容.html', '入库订单')" id="nav-inbound-orders" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">入库订单</a>
+                    <a href="#" onclick="loadPage('出库订单内容.html', '出库订单')" id="nav-outbound-orders" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">出库订单</a>
+                </div>
+            </div>
+
+            <!-- Inventory Management -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">库存管理</div>
+            
+            <a href="#" onclick="loadPage('库存信息内容.html', '库存信息')" id="nav-inventory-info" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+                <i class="fa-solid fa-warehouse w-6 text-indigo-500"></i>
+                <span class="font-medium">库存信息</span>
+            </a>
+
+            <!-- Transfer Management -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">倒库管理</div>
+            
+            <a href="#" onclick="loadPage('倒库管理内容.html', '倒库管理')" id="nav-transfer" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+                <i class="fa-solid fa-arrows-rotate w-6 text-orange-500"></i>
+                <span class="font-medium">倒库管理</span>
+            </a>
+
+            <!-- Task Management -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">任务管理</div>
+            
+            <div class="group" id="group-tasks">
+                <div onclick="toggleSubmenu('tasks')" class="flex items-center justify-between px-6 py-3 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-list-check w-6 text-teal-500"></i>
+                        <span class="font-medium">任务管理</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs rotate-icon"></i>
+                </div>
+                <div class="submenu bg-slate-950" id="sub-tasks">
+                    <a href="#" onclick="loadPage('任务列表内容.html', '任务列表')" id="nav-task-list" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">任务列表</a>
+                </div>
+            </div>
+
+            <!-- Configuration Management -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">配置管理</div>
+            
+            <div class="group" id="group-config">
+                <div onclick="toggleSubmenu('config')" class="flex items-center justify-between px-6 py-3 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-sliders w-6 text-amber-500"></i>
+                        <span class="font-medium">配置管理</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs rotate-icon"></i>
+                </div>
+                <div class="submenu bg-slate-950" id="sub-config">
+                    <a href="#" onclick="loadPage('下件口缓存区配置内容.html', '下件口缓存区配置')" id="nav-buffer-config" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">下件口缓存区配置</a>
+                </div>
+            </div>
+
+            <!-- System Management -->
+            <div class="px-6 mt-6 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">系统管理</div>
+            
+            <div class="group" id="group-system">
+                <div onclick="toggleSubmenu('system')" class="flex items-center justify-between px-6 py-3 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-gears w-6 text-red-500"></i>
+                        <span class="font-medium">系统管理</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs rotate-icon"></i>
+                </div>
+                <div class="submenu bg-slate-950" id="sub-system">
+                    <a href="#" onclick="loadPage('用户管理内容.html', '用户管理')" id="nav-user-mgmt" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">用户管理</a>
+                    <a href="#" onclick="loadPage('角色管理内容.html', '角色管理')" id="nav-role-mgmt" class="nav-item block pl-14 pr-6 py-2 text-sm hover:text-white">角色管理</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- User Profile Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-900">
+            <a href="#" onclick="loadPage('个人信息内容.html', '个人信息')" class="flex items-center gap-3 hover:bg-slate-800 rounded-lg p-2 -m-2 transition-colors group">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                    张
+                </div>
+                <div class="flex-1">
+                    <div class="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">张三</div>
+                    <div class="text-xs text-slate-500">管理员</div>
+                </div>
+                <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition-colors"></i>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-100">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10 flex-shrink-0">
+            <div class="flex items-center text-slate-500 text-sm">
+                <i class="fa-solid fa-location-dot mr-2"></i>
+                <span>当前位置</span>
+                <span class="mx-2">/</span>
+                <span id="breadcrumb-sub" class="font-bold text-slate-800">首页</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="logout()" class="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i>退出系统
+                </button>
+            </div>
+        </header>
+
+        <!-- Iframe Content Area -->
+        <div class="flex-1 overflow-hidden relative">
+            <iframe id="content-frame" src="首页内容.html" class="iframe-container"></iframe>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        // Toggle submenu
+        function toggleSubmenu(id) {
+            const submenu = document.getElementById('sub-' + id);
+            const group = document.getElementById('group-' + id);
+            
+            if (submenu.classList.contains('open')) {
+                submenu.classList.remove('open');
+                group.classList.remove('open');
+            } else {
+                submenu.classList.add('open');
+                group.classList.add('open');
+            }
+        }
+
+        // Load page in iframe
+        function loadPage(url, title) {
+            // Update iframe source
+            document.getElementById('content-frame').src = url;
+            
+            // Update breadcrumb
+            document.getElementById('breadcrumb-sub').textContent = title;
+            
+            // Update active nav item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Prevent default link behavior
+            event.preventDefault();
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出系统吗？')) {
+                window.location.href = '登录页面.html';
+            }
+        }
+
+        // Initialize - load first page
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('爱玛 WMS 系统已加载');
+        });
+    </script>
+
+</body>
+</html>

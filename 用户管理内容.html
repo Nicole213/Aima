@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50">
+    <div class="p-6">
+        <!-- Search Filters -->
+        <div class="bg-white rounded-lg shadow mb-6 p-6">
+            <div class="flex items-end gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">用户名</label>
+                    <input type="text" id="filter-username" placeholder="请输入用户名" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">手机号</label>
+                    <input type="text" id="filter-phone" placeholder="请输入手机号" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">所属角色</label>
+                    <select id="filter-role" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="管理员">管理员</option>
+                        <option value="操作员">操作员</option>
+                        <option value="仓库主管">仓库主管</option>
+                        <option value="查看员">查看员</option>
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="searchData()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                        <i class="fas fa-search mr-2"></i>查询
+                    </button>
+                    <button onclick="resetFilters()" class="px-6 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap">
+                        <i class="fas fa-redo mr-2"></i>重置
+                    </button>
+                    <button onclick="openAddModal()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+                        <i class="fas fa-plus mr-2"></i>新增
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">序号</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">用户名</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">手机号</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">所属角色</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">状态</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">最后登录时间</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-200">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页组件 -->
+            <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+                <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800">3</span> 条记录</span>
+                <div class="flex items-center gap-2">
+                    <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>上一页</button>
+                    <button class="w-10 h-10 bg-blue-600 text-white rounded-lg font-bold text-sm">1</button>
+                    <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>下一页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div id="user-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-2/5">
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <h3 class="text-xl font-bold text-slate-800" id="modal-title">新增用户</h3>
+                <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">用户名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-username" placeholder="请输入用户名" 
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">手机号 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-phone" placeholder="请输入手机号" maxlength="11"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-xs text-slate-500 mt-1">手机号作为登录账号，创建后不可修改</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">所属角色 <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" value="管理员" class="role-checkbox mr-2">
+                                <span class="text-sm">管理员</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" value="操作员" class="role-checkbox mr-2">
+                                <span class="text-sm">操作员</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" value="仓库主管" class="role-checkbox mr-2">
+                                <span class="text-sm">仓库主管</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" value="查看员" class="role-checkbox mr-2">
+                                <span class="text-sm">查看员</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button onclick="closeUserModal()" class="px-6 py-2 bg-slate-400 text-white rounded-lg hover:bg-slate-500 transition-colors">
+                        取消
+                    </button>
+                    <button onclick="saveUser()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-96">
+            <div class="p-6">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-circle text-yellow-500 text-4xl mb-3"></i>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2" id="confirm-title">确认操作</h3>
+                    <p class="text-slate-600" id="confirm-message"></p>
+                </div>
+                <div class="flex justify-center gap-3">
+                    <button onclick="closeConfirmModal()" class="px-6 py-2 bg-slate-400 text-white rounded-lg hover:bg-slate-500 transition-colors">
+                        取消
+                    </button>
+                    <button onclick="confirmAction()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        确认
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Permission Modal -->
+    <div id="view-permission-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-4/5 max-h-[90vh] flex flex-col">
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-slate-800">权限查看 - <span id="view-permission-username"></span></h3>
+                <button onclick="closeViewPermissionModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Left: Menu Modules -->
+                <div class="w-1/3 border-r border-slate-200 overflow-y-auto bg-slate-50">
+                    <div id="view-menu-list" class="p-4">
+                        <!-- Menu items will be inserted here -->
+                    </div>
+                </div>
+                <!-- Right: Permissions (Read-only) -->
+                <div class="flex-1 overflow-y-auto">
+                    <div id="view-permission-detail" class="p-6">
+                        <div class="text-center text-slate-400 py-12">
+                            <i class="fas fa-hand-pointer text-4xl mb-3"></i>
+                            <p>请从左侧选择菜单模块</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-slate-200 px-6 py-4 flex justify-end">
+                <button onclick="closeViewPermissionModal()" class="px-6 py-2 bg-slate-400 text-white rounded-lg hover:bg-slate-500 transition-colors">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data
+        const mockUsers = [
+            { id: 1, username: '张三', phone: '13800138001', roles: ['管理员'], status: '启用', lastLogin: '2024-01-27 10:30:00' },
+            { id: 2, username: '李四', phone: '13800138002', roles: ['操作员'], status: '启用', lastLogin: '2024-01-27 09:15:00' },
+            { id: 3, username: '王五', phone: '13800138003', roles: ['仓库主管', '操作员'], status: '禁用', lastLogin: '2024-01-26 16:20:00' },
+            { id: 4, username: '赵六', phone: '13800138004', roles: ['查看员'], status: '启用', lastLogin: '2024-01-27 08:45:00' }
+        ];
+
+        // Mock role permissions
+        const rolePermissions = {
+            '管理员': ['all'],
+            '操作员': ['operations-inbound-view', 'operations-inbound-operate', 'operations-outbound-view', 'operations-outbound-operate', 'orders-inbound-orders-view', 'orders-outbound-orders-view'],
+            '仓库主管': ['inventory-inventory-info-view', 'inventory-inventory-info-export', 'inventory-inventory-stats-view', 'tasks-task-list-view', 'tasks-task-list-export', 'basedata-materials-view', 'basedata-carriers-view'],
+            '查看员': ['dashboard-view', 'visualization-map-view', 'inventory-inventory-info-view', 'tasks-task-list-view']
+        };
+
+        // Permission tree structure (same as role management)
+        const permissionTree = [
+            {
+                module: '首页',
+                key: 'dashboard',
+                permissions: [
+                    { name: '查看', key: 'view' }
+                ]
+            },
+            {
+                module: '现场作业',
+                key: 'operations',
+                children: [
+                    {
+                        name: '上件作业',
+                        key: 'inbound',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '操作', key: 'operate' }
+                        ]
+                    },
+                    {
+                        name: '下件作业',
+                        key: 'outbound',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '操作', key: 'operate' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '可视化监控',
+                key: 'visualization',
+                children: [
+                    {
+                        name: '库区地图',
+                        key: 'map',
+                        permissions: [
+                            { name: '查看', key: 'view' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '基础数据',
+                key: 'basedata',
+                children: [
+                    {
+                        name: '物料管理',
+                        key: 'materials',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '新增', key: 'add' },
+                            { name: '编辑', key: 'edit' },
+                            { name: '删除', key: 'delete' }
+                        ]
+                    },
+                    {
+                        name: '载具管理',
+                        key: 'carriers',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '新增', key: 'add' },
+                            { name: '编辑', key: 'edit' },
+                            { name: '删除', key: 'delete' }
+                        ]
+                    },
+                    {
+                        name: '库区管理',
+                        key: 'zones',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '编辑', key: 'edit' }
+                        ]
+                    },
+                    {
+                        name: '巷道管理',
+                        key: 'aisles',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '编辑', key: 'edit' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '订单管理',
+                key: 'orders',
+                children: [
+                    {
+                        name: '入库订单',
+                        key: 'inbound-orders',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '新增', key: 'add' },
+                            { name: '编辑', key: 'edit' },
+                            { name: '删除', key: 'delete' }
+                        ]
+                    },
+                    {
+                        name: '出库订单',
+                        key: 'outbound-orders',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '新增', key: 'add' },
+                            { name: '编辑', key: 'edit' },
+                            { name: '删除', key: 'delete' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '库存管理',
+                key: 'inventory',
+                children: [
+                    {
+                        name: '库存信息',
+                        key: 'inventory-info',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '导出', key: 'export' }
+                        ]
+                    },
+                    {
+                        name: '库存统计',
+                        key: 'inventory-stats',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '倒库操作', key: 'transfer' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '任务管理',
+                key: 'tasks',
+                children: [
+                    {
+                        name: '任务列表',
+                        key: 'task-list',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '导出', key: 'export' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '配置管理',
+                key: 'config',
+                children: [
+                    {
+                        name: '下件口缓存区配置',
+                        key: 'buffer-config',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '配置', key: 'configure' }
+                        ]
+                    }
+                ]
+            },
+            {
+                module: '系统管理',
+                key: 'system',
+                children: [
+                    {
+                        name: '用户管理',
+                        key: 'user-mgmt',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '新增', key: 'add' },
+                            { name: '编辑', key: 'edit' },
+                            { name: '删除', key: 'delete' },
+                            { name: '禁用/启用', key: 'toggle' },
+                            { name: '重置密码', key: 'reset' }
+                        ]
+                    },
+                    {
+                        name: '角色管理',
+                        key: 'role-mgmt',
+                        permissions: [
+                            { name: '查看', key: 'view' },
+                            { name: '新增', key: 'add' },
+                            { name: '编辑', key: 'edit' },
+                            { name: '删除', key: 'delete' },
+                            { name: '权限配置', key: 'permission' }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        let currentData = [...mockUsers];
+        let editingUserId = null;
+        let confirmCallback = null;
+        let viewSelectedModule = null;
+        let viewUserPermissions = [];
+
+        // Render table
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">暂无数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 text-sm text-slate-600">${index + 1}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-slate-800">${item.username}</td>
+                    <td class="px-4 py-3 text-sm font-mono text-slate-600">${item.phone}</td>
+                    <td class="px-4 py-3 text-sm text-slate-600">
+                        ${item.roles.map(role => `<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mr-1">${role}</span>`).join('')}
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-medium ${item.status === '启用' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            ${item.status}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-slate-500">${item.lastLogin}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                            <button onclick="editUser(${item.id})" class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm" title="编辑">
+                                编辑
+                            </button>
+                            <button onclick="deleteUser(${item.id})" class="text-red-600 hover:text-red-700 px-2 py-1 text-sm" title="删除">
+                                删除
+                            </button>
+                            <button onclick="toggleStatus(${item.id})" class="text-${item.status === '启用' ? 'orange' : 'green'}-600 hover:text-${item.status === '启用' ? 'orange' : 'green'}-700 px-2 py-1 text-sm" title="${item.status === '启用' ? '禁用' : '启用'}">
+                                ${item.status === '启用' ? '禁用' : '启用'}
+                            </button>
+                            <button onclick="resetPassword(${item.id})" class="text-purple-600 hover:text-purple-700 px-2 py-1 text-sm" title="重置密码">
+                                重置密码
+                            </button>
+                            <button onclick="viewPermissions(${item.id})" class="text-teal-600 hover:text-teal-700 px-2 py-1 text-sm" title="权限查看">
+                                权限查看
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Search data
+        function searchData() {
+            const username = document.getElementById('filter-username').value.toLowerCase();
+            const phone = document.getElementById('filter-phone').value;
+            const role = document.getElementById('filter-role').value;
+
+            currentData = mockUsers.filter(item => {
+                return (!username || item.username.toLowerCase().includes(username)) &&
+                       (!phone || item.phone.includes(phone)) &&
+                       (!role || item.roles.includes(role));
+            });
+
+            renderTable(currentData);
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filter-username').value = '';
+            document.getElementById('filter-phone').value = '';
+            document.getElementById('filter-role').value = '';
+            currentData = [...mockUsers];
+            renderTable(currentData);
+        }
+
+        // Open add modal
+        function openAddModal() {
+            editingUserId = null;
+            document.getElementById('modal-title').textContent = '新增用户';
+            document.getElementById('input-username').value = '';
+            document.getElementById('input-phone').value = '';
+            document.getElementById('input-phone').disabled = false;
+            document.querySelectorAll('.role-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+
+        // Edit user
+        function editUser(id) {
+            const user = mockUsers.find(u => u.id === id);
+            if (!user) return;
+
+            editingUserId = id;
+            document.getElementById('modal-title').textContent = '编辑用户';
+            document.getElementById('input-username').value = user.username;
+            document.getElementById('input-phone').value = user.phone;
+            document.getElementById('input-phone').disabled = true;
+            
+            document.querySelectorAll('.role-checkbox').forEach(cb => {
+                cb.checked = user.roles.includes(cb.value);
+            });
+
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+
+        // Save user
+        function saveUser() {
+            const username = document.getElementById('input-username').value.trim();
+            const phone = document.getElementById('input-phone').value.trim();
+            const roles = Array.from(document.querySelectorAll('.role-checkbox:checked')).map(cb => cb.value);
+
+            if (!username || !phone || roles.length === 0) {
+                alert('请填写所有必填项！');
+                return;
+            }
+
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                alert('请输入正确的手机号！');
+                return;
+            }
+
+            if (editingUserId) {
+                const user = mockUsers.find(u => u.id === editingUserId);
+                if (user) {
+                    user.username = username;
+                    user.roles = roles;
+                }
+                alert('用户信息已更新！');
+            } else {
+                mockUsers.push({
+                    id: mockUsers.length + 1,
+                    username,
+                    phone,
+                    roles,
+                    status: '启用',
+                    lastLogin: '-'
+                });
+                alert('用户创建成功！初始密码为：123456');
+            }
+
+            closeUserModal();
+            currentData = [...mockUsers];
+            renderTable(currentData);
+        }
+
+        // Close user modal
+        function closeUserModal() {
+            document.getElementById('user-modal').classList.add('hidden');
+        }
+
+        // Delete user
+        function deleteUser(id) {
+            const user = mockUsers.find(u => u.id === id);
+            if (!user) return;
+
+            showConfirm('删除用户', `确定要删除用户 "${user.username}" 吗？此操作不可恢复。`, () => {
+                const index = mockUsers.findIndex(u => u.id === id);
+                if (index > -1) {
+                    mockUsers.splice(index, 1);
+                    currentData = [...mockUsers];
+                    renderTable(currentData);
+                    alert('用户已删除！');
+                }
+            });
+        }
+
+        // Toggle status
+        function toggleStatus(id) {
+            const user = mockUsers.find(u => u.id === id);
+            if (!user) return;
+
+            const action = user.status === '启用' ? '禁用' : '启用';
+            const message = action === '禁用' 
+                ? `确定要禁用用户 "${user.username}" 吗？禁用后该账号将无法登录系统。`
+                : `确定要启用用户 "${user.username}" 吗？启用后将恢复登录权限。`;
+
+            showConfirm(`${action}用户`, message, () => {
+                user.status = action;
+                currentData = [...mockUsers];
+                renderTable(currentData);
+                alert(`用户已${action}！`);
+            });
+        }
+
+        // Reset password
+        function resetPassword(id) {
+            const user = mockUsers.find(u => u.id === id);
+            if (!user) return;
+
+            showConfirm('重置密码', `确定要重置用户 "${user.username}" 的密码吗？密码将被重置为：123456`, () => {
+                alert('密码已重置为：123456');
+            });
+        }
+
+        // Show confirm modal
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = callback;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        // Confirm action
+        function confirmAction() {
+            if (confirmCallback) {
+                confirmCallback();
+                confirmCallback = null;
+            }
+            closeConfirmModal();
+        }
+
+        // Close confirm modal
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        // View permissions
+        function viewPermissions(id) {
+            const user = mockUsers.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('view-permission-username').textContent = user.username;
+
+            // Collect all permissions from user's roles
+            viewUserPermissions = [];
+            user.roles.forEach(role => {
+                if (rolePermissions[role]) {
+                    viewUserPermissions = viewUserPermissions.concat(rolePermissions[role]);
+                }
+            });
+
+            renderViewMenuList();
+            document.getElementById('view-permission-modal').classList.remove('hidden');
+        }
+
+        // Calculate permission counts for view (read-only)
+        function getViewPermissionCounts(module, moduleKey, childKey = null) {
+            const baseKey = childKey ? `${moduleKey}-${childKey}` : moduleKey;
+            const permissions = module.permissions || [];
+            const total = permissions.length;
+            
+            let configured = 0;
+            if (viewUserPermissions.includes('all')) {
+                configured = total;
+            } else {
+                permissions.forEach(perm => {
+                    const permKey = `${baseKey}-${perm.key}`;
+                    if (viewUserPermissions.includes(permKey)) {
+                        configured++;
+                    }
+                });
+            }
+            
+            return { configured, total };
+        }
+
+        // Render view menu list
+        function renderViewMenuList() {
+            const container = document.getElementById('view-menu-list');
+            container.innerHTML = permissionTree.map((module, index) => {
+                let moduleHtml = '';
+                
+                if (module.children) {
+                    // Parent module with children
+                    moduleHtml = `
+                        <div class="mb-2">
+                            <div class="px-4 py-3 rounded-lg bg-slate-100">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-folder text-blue-500 mr-3"></i>
+                                        <span class="font-medium text-slate-800">${module.module}</span>
+                                    </div>
+                                </div>
+                                <div class="ml-8 mt-2 space-y-1">
+                                    ${module.children.map((child, childIndex) => {
+                                        const counts = getViewPermissionCounts(child, module.key, child.key);
+                                        const countColor = counts.configured === counts.total ? 'text-green-600' : counts.configured > 0 ? 'text-blue-600' : 'text-slate-400';
+                                        return `
+                                            <div onclick="selectViewSubModule(${index}, ${childIndex})" 
+                                                 id="view-submenu-item-${index}-${childIndex}"
+                                                 class="view-submenu-item cursor-pointer px-3 py-2 rounded text-sm hover:bg-slate-100 transition-colors flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-file text-slate-400 mr-2"></i>
+                                                    <span>${child.name}</span>
+                                                </div>
+                                                <span class="text-xs font-medium ${countColor}">${counts.configured}/${counts.total}</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Module without children
+                    const counts = getViewPermissionCounts(module, module.key);
+                    const countColor = counts.configured === counts.total ? 'text-green-600' : counts.configured > 0 ? 'text-blue-600' : 'text-slate-400';
+                    moduleHtml = `
+                        <div class="mb-2">
+                            <div onclick="selectViewModule(${index})" 
+                                 id="view-menu-item-${index}"
+                                 class="view-menu-item cursor-pointer px-4 py-3 rounded-lg hover:bg-white transition-colors ${index === 0 ? 'bg-white shadow-sm' : ''}">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-folder text-blue-500 mr-3"></i>
+                                        <span class="font-medium text-slate-800">${module.module}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-medium ${countColor}">${counts.configured}/${counts.total}</span>
+                                        <i class="fas fa-chevron-right text-slate-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                return moduleHtml;
+            }).join('');
+
+            // Auto-select first module
+            if (permissionTree.length > 0) {
+                if (permissionTree[0].children) {
+                    selectViewSubModule(0, 0);
+                } else {
+                    selectViewModule(0);
+                }
+            }
+        }
+
+        // Select view module
+        function selectViewModule(index) {
+            const module = permissionTree[index];
+            if (module.children) return;
+
+            viewSelectedModule = { moduleIndex: index };
+            
+            document.querySelectorAll('.view-menu-item').forEach(item => {
+                item.classList.remove('bg-white', 'shadow-sm');
+            });
+            document.getElementById(`view-menu-item-${index}`).classList.add('bg-white', 'shadow-sm');
+
+            renderViewPermissionDetail(module, index);
+        }
+
+        // Select view sub-module
+        function selectViewSubModule(moduleIndex, childIndex) {
+            const module = permissionTree[moduleIndex];
+            const child = module.children[childIndex];
+
+            viewSelectedModule = { moduleIndex, childIndex };
+
+            document.querySelectorAll('.view-submenu-item').forEach(item => {
+                item.classList.remove('bg-blue-100', 'text-blue-700');
+            });
+            document.getElementById(`view-submenu-item-${moduleIndex}-${childIndex}`).classList.add('bg-blue-100', 'text-blue-700');
+
+            renderViewPermissionDetail(child, moduleIndex, childIndex);
+        }
+
+        // Render view permission detail (read-only)
+        function renderViewPermissionDetail(item, moduleIndex, childIndex = null) {
+            const container = document.getElementById('view-permission-detail');
+            const module = permissionTree[moduleIndex];
+            const baseKey = childIndex !== null 
+                ? `${module.key}-${item.key}` 
+                : module.key;
+
+            const hasAllPermissions = viewUserPermissions.includes('all');
+
+            container.innerHTML = `
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 pb-3 border-b">
+                        ${childIndex !== null ? `${module.module} / ${item.name}` : item.module}
+                    </h3>
+                    ${hasAllPermissions ? `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center text-green-700">
+                                <i class="fas fa-check-circle text-2xl mr-3"></i>
+                                <div>
+                                    <div class="font-semibold">拥有所有权限</div>
+                                    <div class="text-sm text-green-600">该用户具有系统所有模块的完整操作权限</div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div class="space-y-3">
+                        <div class="text-sm text-slate-600 mb-4">该模块的权限配置：</div>
+                        ${item.permissions.map(perm => {
+                            const permKey = `${baseKey}-${perm.key}`;
+                            const hasPermission = hasAllPermissions || viewUserPermissions.includes(permKey);
+                            return `
+                                <div class="flex items-center p-3 border ${hasPermission ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-slate-50'} rounded-lg">
+                                    <div class="flex-1 flex items-center">
+                                        ${hasPermission ? `
+                                            <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
+                                        ` : `
+                                            <i class="fas fa-times-circle text-slate-300 text-xl mr-3"></i>
+                                        `}
+                                        <span class="font-medium ${hasPermission ? 'text-slate-800' : 'text-slate-400'}">${perm.name}</span>
+                                    </div>
+                                    <i class="fas fa-${perm.key === 'view' ? 'eye' : perm.key === 'add' ? 'plus' : perm.key === 'edit' ? 'edit' : perm.key === 'delete' ? 'trash' : 'check'} ${hasPermission ? 'text-green-500' : 'text-slate-300'}"></i>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Close view permission modal
+        function closeViewPermissionModal() {
+            document.getElementById('view-permission-modal').classList.add('hidden');
+            viewSelectedModule = null;
+            viewUserPermissions = [];
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            renderTable(currentData);
+        });
+    </script>
+</body>
+</html>

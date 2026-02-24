@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下件作业</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emma: {
+                            500: '#ec4899', 
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        
+        /* 增强触摸反馈 */
+        .touch-target {
+            min-height: 60px;
+            touch-action: manipulation;
+        }
+        
+        /* 工业现场高对比度样式 */
+        .industrial-highlight {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Radio Button Custom Style - 增强触摸区域 */
+        .order-radio:checked + label {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .order-radio + label {
+            min-height: 80px;
+            touch-action: manipulation;
+        }
+        
+        .order-radio + label:active {
+            transform: scale(0.99);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 p-6">
+    <!-- TOP SECTION: Controls & Info -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-4">
+        <div class="mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="bg-slate-800 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
+                </span>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">下件口 3</h2>
+                    <p class="text-slate-500 text-xs">总装线 C | 系统状态: <span class="text-green-500 font-bold">在线</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-6">
+                <!-- 出库订单选择 - 加大尺寸便于触摸操作 -->
+                <div class="col-span-5">
+                    <label class="block text-base font-bold text-slate-700 uppercase mb-2 tracking-wide">出库订单选择</label>
+                    <div class="relative group">
+                        <input 
+                            type="text" 
+                            id="orderInput" 
+                            readonly 
+                            onclick="openOrderModal()"
+                            class="bg-gradient-to-br from-white to-slate-50 border-3 border-slate-300 text-slate-900 text-lg font-semibold rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 block w-full pl-5 pr-14 py-5 transition cursor-pointer hover:bg-white hover:shadow-lg hover:border-blue-400 active:scale-[0.98] overflow-visible whitespace-nowrap" 
+                            placeholder="👆 点击选择出库订单..."
+                            value="OUT-20260124-088 | 豪华款车架-白"
+                            style="text-overflow: clip;"
+                        >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-5 pointer-events-none z-10">
+                            <i class="fa-solid fa-chevron-down text-2xl text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本次叫料总数 - 加大尺寸便于触摸操作 -->
+                <div class="col-span-7 flex items-end">
+                    <div class="w-56">
+                        <label class="block text-base font-bold text-slate-700 uppercase mb-2 tracking-wide">本次叫料总数</label>
+                        <div class="relative">
+                            <input 
+                                type="number" 
+                                min="1" 
+                                step="1" 
+                                value="6"
+                                class="bg-gradient-to-br from-white to-slate-50 border-3 border-slate-300 text-slate-800 font-bold text-3xl rounded-xl focus:ring-4 focus:ring-orange-300 focus:border-orange-500 block w-full py-5 px-6 shadow-md hover:shadow-lg hover:bg-slate-100 transition-all text-center"
+                                placeholder="0"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-5 bg-slate-50 border border-slate-200 rounded-lg p-5">
+                <h4 class="text-sm font-bold text-slate-500 uppercase mb-4 border-b border-slate-200 pb-2">当前订单详情</h4>
+                
+                <!-- 订单基本信息 -->
+                <div class="space-y-3 text-base mb-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-600 font-medium">出库订单号:</span>
+                        <span class="font-mono font-bold text-slate-800 text-lg">OUT-20260124-088</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-600 font-medium">物料名称:</span>
+                        <span class="font-bold text-slate-800 text-lg">豪华款车架-白</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-600 font-medium">物料编号:</span>
+                        <span class="font-mono text-slate-700 text-base">M-WHT-002</span>
+                    </div>
+                </div>
+                
+                <!-- 订单统计数据 -->
+                <div class="bg-purple-50 border border-purple-100 rounded-lg p-4 flex items-center justify-around">
+                    <div class="text-center">
+                        <div class="text-xs text-slate-500 mb-1 font-semibold">订单总数</div>
+                        <div class="text-2xl font-bold text-slate-800">500</div>
+                    </div>
+                    <div class="h-12 w-px bg-purple-200"></div>
+                    <div class="text-center">
+                        <div class="text-xs text-green-600 mb-1 font-semibold">已出库</div>
+                        <div class="text-3xl font-bold text-green-600">320</div>
+                    </div>
+                    <div class="h-12 w-px bg-purple-200"></div>
+                    <div class="text-center">
+                        <div class="text-xs text-orange-600 mb-1 font-semibold">待出库</div>
+                        <div class="text-2xl font-bold text-orange-600">180</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-7 bg-slate-800 text-white rounded-lg p-5 shadow-md relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-2 opacity-10"><i class="fa-solid fa-truck-ramp-box text-6xl"></i></div>
+                
+                <div class="flex justify-between items-center z-10 mb-4 relative">
+                    <span class="text-sm uppercase text-slate-400 font-bold">小车就位状态</span>
+                    <span class="bg-green-500 text-white text-sm font-bold px-3 py-2 rounded shadow-lg animate-pulse flex items-center gap-2">
+                        <i class="fa-solid fa-check-circle"></i> 已就位
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6 relative z-10">
+                    <!-- 左列：当前小车信息 -->
+                    <div class="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+                        <div class="text-sm text-slate-400 mb-3 font-bold">当前小车信息</div>
+                        <div class="space-y-3 text-base">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400 font-medium">物料名称:</span>
+                                <span class="font-bold text-white text-lg">豪华款车架-白</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400 font-medium">物料编码:</span>
+                                <span class="font-mono text-slate-300 text-base">M-WHT-002</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400 font-medium">数量:</span>
+                                <span class="font-bold text-green-400 text-2xl">4</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右列：小车编码和解绑按钮 -->
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <label class="text-sm text-slate-400 font-medium">小车编码 (RFID / 手动)</label>
+                            <div class="flex items-center gap-2 mt-2">
+                                <input type="text" value="C-10045" class="bg-slate-700 border border-slate-600 text-white font-mono text-xl w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition">
+                                <button class="text-slate-400 hover:text-white p-2" title="修改"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
+                            </div>
+                        </div>
+                        
+                        <!-- 解绑按钮 -->
+                        <button class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 text-base">
+                            <i class="fa-solid fa-link-slash text-lg"></i>
+                            解绑下件
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM SECTION: Task List -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+        <div class="p-4 border-b bg-slate-50">
+            <div class="flex items-center gap-2 mb-4">
+                <h3 class="font-bold text-slate-700">今日下件任务记录</h3>
+                <span class="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">98</span>
+            </div>
+            
+            <!-- 搜索筛选区域 - 单行布局 -->
+            <div class="flex items-end gap-4">
+                <!-- 小车编码搜索 -->
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">小车编码</label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            placeholder="搜索小车编码..."
+                            class="bg-white border-2 border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2.5 transition"
+                        >
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 物料编码/名称搜索 -->
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">物料编码/名称</label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            placeholder="搜索物料编码或名称..."
+                            class="bg-white border-2 border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2.5 transition"
+                        >
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 出库订单号搜索 -->
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">出库订单号</label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            placeholder="搜索订单号..."
+                            class="bg-white border-2 border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2.5 transition"
+                        >
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 任务状态下拉框 -->
+                <div class="w-48">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">任务状态</label>
+                    <div class="relative">
+                        <select class="bg-white border-2 border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 pr-10 appearance-none cursor-pointer">
+                            <option value="">全部状态</option>
+                            <option value="待执行">待执行</option>
+                            <option value="执行中">执行中</option>
+                            <option value="已完成">已完成</option>
+                            <option value="异常">异常</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fa-solid fa-chevron-down text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="flex gap-3">
+                    <button class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-semibold text-sm shadow-md active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-search"></i>
+                        查询
+                    </button>
+                    <button class="px-6 py-2.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all font-semibold text-sm active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        重置
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+                <thead class="bg-slate-100 text-xs uppercase text-slate-700">
+                    <tr>
+                        <th class="px-6 py-3 whitespace-nowrap">小车编码</th>
+                        <th class="px-6 py-3 whitespace-nowrap">物料编码</th>
+                        <th class="px-6 py-3 whitespace-nowrap">物料名称</th>
+                        <th class="px-6 py-3 whitespace-nowrap">出库订单号</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">数量</th>
+                        <th class="px-6 py-3 whitespace-nowrap">下件口</th>
+                        <th class="px-6 py-3 whitespace-nowrap">出库库位</th>
+                        <th class="px-6 py-3 whitespace-nowrap">任务状态</th>
+                        <th class="px-6 py-3 whitespace-nowrap">发起时间</th>
+                        <th class="px-6 py-3 whitespace-nowrap">完成时间</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10045</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-05巷-02</td>
+                        <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">执行中</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:15:20</td>
+                        <td class="px-6 py-4 text-xs text-slate-400">-</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10042</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-05巷-01</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:10:15</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:13:08</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10039</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-15</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:05:30</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:08:45</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10036</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-14</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:00:10</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">11:03:25</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10033</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-13</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:55:40</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:58:50</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10030</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-12</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:50:20</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:53:35</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10027</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-11</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:45:05</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:48:15</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10024</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-10</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:40:30</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:43:40</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10021</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-09</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:35:15</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:38:25</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-800">C-10018</td>
+                        <td class="px-6 py-4 font-mono">M-WHT-002</td>
+                        <td class="px-6 py-4 font-bold text-slate-700">豪华款车架-白</td>
+                        <td class="px-6 py-4">OUT-20260124-088</td>
+                        <td class="px-6 py-4 text-center font-bold">4</td>
+                        <td class="px-6 py-4">下件口 3</td>
+                        <td class="px-6 py-4 font-mono text-purple-600">B区-04巷-08</td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">已完成</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:30:00</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">10:33:10</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页组件 - 适合工业现场触摸操作 -->
+        <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800">98</span> 条记录</span>
+                <span class="text-slate-300">|</span>
+                <span class="text-sm text-slate-600">每页显示</span>
+                <select class="bg-white border-2 border-slate-300 text-slate-800 font-semibold text-base rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                    <option value="10" selected>10 条</option>
+                    <option value="20">20 条</option>
+                    <option value="50">50 条</option>
+                    <option value="100">100 条</option>
+                </select>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- 首页按钮 -->
+                <button class="px-4 py-3 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-base shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-angles-left"></i>
+                </button>
+                
+                <!-- 上一页按钮 -->
+                <button class="px-5 py-3 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-base shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-chevron-left mr-2"></i>上一页
+                </button>
+                
+                <!-- 页码显示 -->
+                <div class="flex items-center gap-2">
+                    <button class="w-12 h-12 bg-blue-600 text-white rounded-lg font-bold text-base shadow-md">1</button>
+                    <button class="w-12 h-12 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-base shadow-sm active:scale-95">2</button>
+                    <button class="w-12 h-12 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-base shadow-sm active:scale-95">3</button>
+                    <span class="text-slate-400 px-2">...</span>
+                    <button class="w-12 h-12 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-base shadow-sm active:scale-95">10</button>
+                </div>
+                
+                <!-- 下一页按钮 -->
+                <button class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-semibold text-base shadow-md active:scale-95">
+                    下一页<i class="fa-solid fa-chevron-right ml-2"></i>
+                </button>
+                
+                <!-- 末页按钮 -->
+                <button class="px-4 py-3 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all font-semibold text-base shadow-sm active:scale-95">
+                    <i class="fa-solid fa-angles-right"></i>
+                </button>
+                
+                <span class="text-slate-300 mx-2">|</span>
+                
+                <!-- 跳转页码 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-slate-600">跳转到</span>
+                    <input type="number" min="1" max="10" value="1" class="w-20 bg-white border-2 border-slate-300 text-slate-800 font-semibold text-base rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center">
+                    <button class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-all font-semibold text-base shadow-sm active:scale-95">
+                        GO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出库订单选择弹窗 -->
+    <div id="orderModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <!-- 弹窗头部 -->
+            <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">选择出库订单</h3>
+                    <p class="text-sm text-slate-500 mt-1">请选择待执行或执行中的出库订单</p>
+                </div>
+                <button onclick="closeOrderModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- 搜索栏 -->
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="orderSearch"
+                        onkeyup="filterOrders()"
+                        class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-3" 
+                        placeholder="搜索订单号、物料名称或物料编码..."
+                    >
+                </div>
+            </div>
+
+            <!-- 订单列表 -->
+            <div class="flex-1 overflow-auto p-4">
+                <div class="space-y-2" id="orderList">
+                    <!-- 订单项 1 -->
+                    <div class="order-item">
+                        <input type="radio" name="selectedOrder" id="order1" value="OUT-20260124-088" class="order-radio hidden" 
+                            data-order-no="OUT-20260124-088"
+                            data-plan-no="ASM-2026-C001"
+                            data-material-name="豪华款车架-白"
+                            data-material-code="M-WHT-002"
+                            data-total="500"
+                            data-completed="320"
+                            data-pending="180"
+                        >
+                        <label for="order1" class="block p-6 border-3 border-slate-300 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md hover:shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 grid grid-cols-7 gap-6 items-center">
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">出库订单号</div>
+                                        <div class="font-mono font-bold text-slate-800 text-lg">OUT-20260124-088</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总装计划号</div>
+                                        <div class="font-mono text-slate-700 text-base">ASM-2026-C001</div>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料名称</div>
+                                        <div class="font-bold text-slate-800 text-lg">豪华款车架-白</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料编码</div>
+                                        <div class="font-mono text-slate-700 text-base">M-WHT-002</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总数/已出/待出</div>
+                                        <div class="font-bold text-base">
+                                            <span class="text-blue-600">500</span> / 
+                                            <span class="text-green-600">320</span> / 
+                                            <span class="text-orange-600">180</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-bold">执行中</span>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <i class="fa-solid fa-circle-check text-4xl text-blue-600 opacity-0"></i>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 订单项 2 -->
+                    <div class="order-item">
+                        <input type="radio" name="selectedOrder" id="order2" value="OUT-20260124-089" class="order-radio hidden"
+                            data-order-no="OUT-20260124-089"
+                            data-plan-no="ASM-2026-C002"
+                            data-material-name="运动款车架-蓝"
+                            data-material-code="M-BLU-004"
+                            data-total="400"
+                            data-completed="0"
+                            data-pending="400"
+                        >
+                        <label for="order2" class="block p-6 border-3 border-slate-300 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md hover:shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 grid grid-cols-7 gap-6 items-center">
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">出库订单号</div>
+                                        <div class="font-mono font-bold text-slate-800 text-lg">OUT-20260124-089</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总装计划号</div>
+                                        <div class="font-mono text-slate-700 text-base">ASM-2026-C002</div>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料名称</div>
+                                        <div class="font-bold text-slate-800 text-lg">运动款车架-蓝</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料编码</div>
+                                        <div class="font-mono text-slate-700 text-base">M-BLU-004</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总数/已出/待出</div>
+                                        <div class="font-bold text-base">
+                                            <span class="text-blue-600">400</span> / 
+                                            <span class="text-green-600">0</span> / 
+                                            <span class="text-orange-600">400</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <span class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full text-sm font-bold">待执行</span>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <i class="fa-solid fa-circle-check text-4xl text-blue-600 opacity-0"></i>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 订单项 3 -->
+                    <div class="order-item">
+                        <input type="radio" name="selectedOrder" id="order3" value="OUT-20260124-090" class="order-radio hidden"
+                            data-order-no="OUT-20260124-090"
+                            data-plan-no="ASM-2026-C003"
+                            data-material-name="简易款车架-黑"
+                            data-material-code="M-BLK-001"
+                            data-total="600"
+                            data-completed="150"
+                            data-pending="450"
+                        >
+                        <label for="order3" class="block p-6 border-3 border-slate-300 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md hover:shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 grid grid-cols-7 gap-6 items-center">
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">出库订单号</div>
+                                        <div class="font-mono font-bold text-slate-800 text-lg">OUT-20260124-090</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总装计划号</div>
+                                        <div class="font-mono text-slate-700 text-base">ASM-2026-C003</div>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料名称</div>
+                                        <div class="font-bold text-slate-800 text-lg">简易款车架-黑</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料编码</div>
+                                        <div class="font-mono text-slate-700 text-base">M-BLK-001</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总数/已出/待出</div>
+                                        <div class="font-bold text-base">
+                                            <span class="text-blue-600">600</span> / 
+                                            <span class="text-green-600">150</span> / 
+                                            <span class="text-orange-600">450</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-bold">执行中</span>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <i class="fa-solid fa-circle-check text-4xl text-blue-600 opacity-0"></i>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 订单项 4 -->
+                    <div class="order-item">
+                        <input type="radio" name="selectedOrder" id="order4" value="OUT-20260124-091" class="order-radio hidden"
+                            data-order-no="OUT-20260124-091"
+                            data-plan-no="ASM-2026-C004"
+                            data-material-name="经典款车架-红"
+                            data-material-code="M-RED-003"
+                            data-total="350"
+                            data-completed="0"
+                            data-pending="350"
+                        >
+                        <label for="order4" class="block p-6 border-3 border-slate-300 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md hover:shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 grid grid-cols-7 gap-6 items-center">
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">出库订单号</div>
+                                        <div class="font-mono font-bold text-slate-800 text-lg">OUT-20260124-091</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总装计划号</div>
+                                        <div class="font-mono text-slate-700 text-base">ASM-2026-C004</div>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料名称</div>
+                                        <div class="font-bold text-slate-800 text-lg">经典款车架-红</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">物料编码</div>
+                                        <div class="font-mono text-slate-700 text-base">M-RED-003</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-sm text-slate-500 mb-2 font-semibold">总数/已出/待出</div>
+                                        <div class="font-bold text-base">
+                                            <span class="text-blue-600">350</span> / 
+                                            <span class="text-green-600">0</span> / 
+                                            <span class="text-orange-600">350</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <span class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full text-sm font-bold">待执行</span>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <i class="fa-solid fa-circle-check text-4xl text-blue-600 opacity-0"></i>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 弹窗底部按钮 -->
+            <div class="flex items-center justify-between p-6 border-t border-slate-200 bg-slate-50">
+                <div class="text-base text-slate-600">
+                    <i class="fa-solid fa-info-circle mr-2 text-lg"></i>
+                    已选择: <span id="selectedOrderInfo" class="font-bold text-slate-800">未选择</span>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="closeOrderModal()" class="px-8 py-4 border-3 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100 transition-all font-bold text-base shadow-md hover:shadow-lg active:scale-95">
+                        取消
+                    </button>
+                    <button onclick="confirmOrderSelection()" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-base shadow-xl shadow-blue-500/40 hover:shadow-2xl active:scale-95">
+                        <i class="fa-solid fa-check mr-2 text-lg"></i>确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 打开订单选择弹窗
+        function openOrderModal() {
+            document.getElementById('orderModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭订单选择弹窗
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 搜索过滤订单
+        function filterOrders() {
+            const searchValue = document.getElementById('orderSearch').value.toLowerCase();
+            const orderItems = document.querySelectorAll('.order-item');
+            
+            orderItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchValue)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // 监听单选按钮变化，显示选中状态
+        document.querySelectorAll('.order-radio').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // 移除所有选中图标
+                document.querySelectorAll('.order-radio + label i').forEach(icon => {
+                    icon.style.opacity = '0';
+                });
+                
+                // 显示当前选中的图标
+                if (this.checked) {
+                    this.nextElementSibling.querySelector('i').style.opacity = '1';
+                    
+                    // 更新底部选择信息
+                    const orderNo = this.dataset.orderNo;
+                    const materialName = this.dataset.materialName;
+                    document.getElementById('selectedOrderInfo').textContent = `${orderNo} | ${materialName}`;
+                }
+            });
+        });
+
+        // 确认选择订单
+        function confirmOrderSelection() {
+            const selectedRadio = document.querySelector('.order-radio:checked');
+            
+            if (!selectedRadio) {
+                alert('请选择一个出库订单');
+                return;
+            }
+
+            // 获取选中订单的数据
+            const orderNo = selectedRadio.dataset.orderNo;
+            const planNo = selectedRadio.dataset.planNo;
+            const materialName = selectedRadio.dataset.materialName;
+            const materialCode = selectedRadio.dataset.materialCode;
+            const total = selectedRadio.dataset.total;
+            const completed = selectedRadio.dataset.completed;
+            const pending = selectedRadio.dataset.pending;
+
+            // 更新文本框显示
+            document.getElementById('orderInput').value = `${orderNo} | ${materialName}`;
+
+            // 更新订单详情区域
+            document.querySelector('.col-span-4.bg-slate-50 .space-y-2').innerHTML = `
+                <div class="flex justify-between">
+                    <span class="text-slate-500">出库订单号:</span>
+                    <span class="font-mono font-bold text-slate-700">${orderNo}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">物料名称:</span>
+                    <span class="font-bold text-slate-800">${materialName}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">物料编号:</span>
+                    <span class="font-mono text-slate-600">${materialCode}</span>
+                </div>
+            `;
+
+            // 更新统计数据
+            const statsDiv = document.querySelector('.col-span-4.bg-purple-50');
+            statsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="text-xs text-slate-500 mb-1">订单总数</div>
+                    <div class="text-2xl font-bold text-slate-800">${total}</div>
+                </div>
+                <div class="h-10 w-px bg-purple-200"></div>
+                <div class="text-center">
+                    <div class="text-xs text-green-600 mb-1">已出库</div>
+                    <div class="text-3xl font-bold text-green-600">${completed}</div>
+                </div>
+                <div class="h-10 w-px bg-purple-200"></div>
+                <div class="text-center">
+                    <div class="text-xs text-orange-600 mb-1">待出库</div>
+                    <div class="text-2xl font-bold text-orange-600">${pending}</div>
+                </div>
+            `;
+
+            // 关闭弹窗
+            closeOrderModal();
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('orderModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeOrderModal();
+            }
+        });
+
+        // 初始化第一个订单为选中状态
+        document.getElementById('order1').checked = true;
+        document.getElementById('order1').dispatchEvent(new Event('change'));
+    </script>
+</body>
+</html>

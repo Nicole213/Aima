@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巷道管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emma: {
+                            500: '#ec4899', 
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow: hidden; }
+    </style>
+</head>
+<body class="bg-slate-100 p-6 h-screen flex flex-col">
+    <!-- 巷道管理主界面 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+        <!-- 搜索区域 -->
+        <div class="p-5 border-b border-slate-100 flex-shrink-0">
+            <div class="flex flex-wrap items-end gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">巷道编码</label>
+                    <input type="text" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">巷道名称</label>
+                    <input type="text" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">所属库区</label>
+                    <select id="filter-aisle-zone" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                        <option value="">全部</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">状态</label>
+                    <select class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-24 p-2.5">
+                        <option value="">全部</option>
+                        <option>启用</option>
+                        <option>禁用</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                    <button class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i> 查询
+                    </button>
+                    <button onclick="openAisleModal('add')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 ml-4">
+                        <i class="fa-solid fa-plus mr-1"></i> 新增巷道
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="flex-1 overflow-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+                <thead class="bg-slate-50 text-xs uppercase text-slate-700 sticky top-0 shadow-sm z-10">
+                    <tr>
+                        <th class="px-6 py-3 whitespace-nowrap">序号</th>
+                        <th class="px-6 py-3 whitespace-nowrap">巷道编码</th>
+                        <th class="px-6 py-3 whitespace-nowrap">巷道名称</th>
+                        <th class="px-6 py-3 whitespace-nowrap">所属库区</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">状态</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">最大容量</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">已用</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">空闲</th>
+                        <th class="px-6 py-3 whitespace-nowrap">创建时间</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="aisle-table-body">
+                    <!-- 数据将通过JavaScript动态生成 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页组件 -->
+        <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+            <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800">1</span> 条记录</span>
+            <div class="flex items-center gap-2">
+                <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>上一页</button>
+                <button class="w-10 h-10 bg-blue-600 text-white rounded-lg font-bold text-sm">1</button>
+                <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑巷道弹窗 -->
+    <div id="modal-aisle-form" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50" onclick="closeModal('aisle-form')"></div>
+        <div class="modal-container bg-white w-full max-w-lg mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-xl font-bold text-slate-800" id="modal-aisle-title">新增巷道</p>
+                    <div class="cursor-pointer" onclick="closeModal('aisle-form')">
+                        <i class="fa-solid fa-xmark text-slate-500 hover:text-slate-800 text-xl"></i>
+                    </div>
+                </div>
+                <form class="py-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">巷道编码 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-aisle-code" class="w-full border border-slate-300 rounded-lg p-2.5" placeholder="例如: A-01">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">巷道名称 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-aisle-name" class="w-full border border-slate-300 rounded-lg p-2.5" placeholder="例如: 巷道 01">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">所属库区 <span class="text-red-500">*</span></label>
+                        <select id="input-aisle-zone" class="w-full border border-slate-300 rounded-lg p-2.5">
+                            <option>库区 1</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">最大容量</label>
+                        <input type="number" id="input-aisle-max" class="w-full border border-slate-300 rounded-lg p-2.5" placeholder="例如: 100">
+                    </div>
+                </form>
+                <div class="flex justify-end pt-2 border-t gap-2">
+                    <button class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200" onclick="closeModal('aisle-form')">取消</button>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" onclick="saveAisle()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认操作弹窗 -->
+    <div id="modal-confirm" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50"></div>
+        <div class="modal-container bg-white w-full max-w-sm mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-lg font-bold text-slate-800" id="confirm-title">确认操作</p>
+                </div>
+                <p class="text-sm text-slate-600 my-4" id="confirm-msg">确定执行此操作？</p>
+                <div class="flex justify-end pt-2 gap-2">
+                    <button class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200" onclick="closeModal('confirm')">取消</button>
+                    <button id="confirm-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        let zones = [
+            { id: 1, code: 'Z-01', name: '库区 1', type: '成品库区', status: 1 },
+            { id: 10, code: 'Z-10', name: '空挂具库区', type: '空挂具库区', status: 1 }
+        ];
+        
+        let aisles = [
+            { id: 1, code: 'A-01', name: '巷道 01', zone: '库区 1', status: 1, max: 100, used: 60, free: 40, createTime: '2024-12-01' },
+            { id: 2, code: 'A-02', name: '巷道 02', zone: '库区 1', status: 1, max: 100, used: 0, free: 100, createTime: '2024-12-01' }
+        ];
+
+        // 渲染表格
+        function renderAisleTable() {
+            const tbody = document.getElementById('aisle-table-body');
+            tbody.innerHTML = '';
+            
+            aisles.forEach((a, i) => {
+                const statusHtml = a.status 
+                    ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">启用</span>` 
+                    : `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs font-bold">禁用</span>`;
+                const toggleAction = a.status ? 'disable' : 'enable';
+                const toggleIcon = a.status ? 'fa-ban text-red-500' : 'fa-circle-check text-green-500';
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-4">${i + 1}</td>
+                    <td class="px-6 py-4 font-mono">${a.code}</td>
+                    <td class="px-6 py-4 font-bold text-slate-700">${a.name}</td>
+                    <td class="px-6 py-4">${a.zone}</td>
+                    <td class="px-6 py-4 text-center">${statusHtml}</td>
+                    <td class="px-6 py-4 text-center font-bold">${a.max}</td>
+                    <td class="px-6 py-4 text-center text-blue-600 font-bold">${a.used}</td>
+                    <td class="px-6 py-4 text-center text-green-600 font-bold">${a.free}</td>
+                    <td class="px-6 py-4 text-xs text-slate-500">${a.createTime}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm mx-1" onclick="openAisleModal('edit', ${a.id})" title="编辑">
+                            编辑
+                        </button>
+                        <button class="px-2 py-1 text-sm mx-1 hover:opacity-80 ${a.status ? 'text-orange-600 hover:text-orange-700' : 'text-green-600 hover:text-green-700'}" onclick="confirmAisleAction('${toggleAction}', ${a.id})" title="${a.status ? '禁用' : '启用'}">
+                            ${a.status ? '禁用' : '启用'}
+                        </button>
+                        <button class="text-red-600 hover:text-red-700 px-2 py-1 text-sm mx-1" onclick="confirmAisleAction('delete', ${a.id})" title="删除">
+                            删除
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // 更新筛选器中的库区选项
+            const zSelect = document.getElementById('filter-aisle-zone');
+            zSelect.innerHTML = '<option value="">全部</option>';
+            zones.forEach(z => {
+                const option = document.createElement('option');
+                option.value = z.name;
+                option.textContent = z.name;
+                zSelect.appendChild(option);
+            });
+        }
+
+        // 弹窗控制
+        function toggleModal(id) {
+            const modal = document.getElementById(`modal-${id}`);
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(`modal-${id}`);
+            modal.classList.add('opacity-0');
+            modal.classList.add('pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+
+        // 打开新增/编辑弹窗
+        function openAisleModal(mode, id) {
+            toggleModal('aisle-form');
+            const codeInput = document.getElementById('input-aisle-code');
+            const zoneSelect = document.getElementById('input-aisle-zone');
+            
+            // 填充库区选项
+            zoneSelect.innerHTML = '';
+            zones.forEach(z => {
+                const option = document.createElement('option');
+                option.value = z.name;
+                option.textContent = z.name;
+                zoneSelect.appendChild(option);
+            });
+            
+            if (mode === 'add') {
+                document.getElementById('modal-aisle-title').innerText = "新增巷道";
+                codeInput.disabled = false;
+                codeInput.value = '';
+                document.getElementById('input-aisle-name').value = '';
+                document.getElementById('input-aisle-max').value = '';
+            } else {
+                document.getElementById('modal-aisle-title').innerText = "编辑巷道";
+                codeInput.disabled = true;
+                const a = aisles.find(x => x.id === id);
+                codeInput.value = a.code;
+                document.getElementById('input-aisle-name').value = a.name;
+                zoneSelect.value = a.zone;
+                document.getElementById('input-aisle-max').value = a.max;
+            }
+        }
+
+        // 保存巷道
+        function saveAisle() {
+            closeModal('aisle-form');
+            alert("保存成功");
+            renderAisleTable();
+        }
+
+        // 确认操作
+        function confirmAisleAction(type, id) {
+            const a = aisles.find(x => x.id === id);
+            
+            if (type === 'delete' && a.used > 0) {
+                alert(`无法删除：巷道 [${a.name}] 仍有库存！`);
+                return;
+            }
+            
+            toggleModal('confirm');
+            document.getElementById('confirm-title').innerText = type === 'delete' ? '确认删除' : (type === 'enable' ? '确认启用' : '确认禁用');
+            document.getElementById('confirm-msg').innerText = type === 'delete' 
+                ? `确定要删除巷道 [${a.name}] 吗？` 
+                : (type === 'enable' ? `确定要启用巷道 [${a.name}] 吗？` : `确定要禁用巷道 [${a.name}] 吗？`);
+            
+            document.getElementById('confirm-btn').onclick = () => {
+                if (type === 'delete') {
+                    aisles = aisles.filter(x => x.id !== id);
+                } else {
+                    a.status = (type === 'enable' ? 1 : 0);
+                }
+                renderAisleTable();
+                closeModal('confirm');
+                alert("操作成功");
+            };
+        }
+
+        // 页面加载时渲染表格
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAisleTable();
+        });
+    </script>
+</body>
+</html>

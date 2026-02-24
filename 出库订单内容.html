@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出库订单</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body.modal-active { overflow: hidden; }
+        .modal { transition: opacity 0.25s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 p-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <!-- 搜索区域 -->
+        <div class="p-5 border-b border-slate-100 flex-shrink-0">
+            <div class="flex flex-wrap items-end gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">出库订单号</label>
+                    <input type="text" id="search-order-no" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">物料名称/编码</label>
+                    <input type="text" id="search-material" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">关联总装计划</label>
+                    <input type="text" id="search-plan" placeholder="模糊查询" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-32 p-2.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">状态</label>
+                    <select id="search-status" class="bg-slate-50 border border-slate-300 text-sm rounded-lg w-28 p-2.5">
+                        <option value="">全部</option>
+                        <option value="pending">待执行</option>
+                        <option value="executing">执行中</option>
+                        <option value="paused">已暂停</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="searchOrders()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i> 查询
+                    </button>
+                    <button onclick="openOrderModal('add')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 ml-4">
+                        <i class="fa-solid fa-plus mr-1"></i> 新建出库订单
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600">
+                <thead class="bg-slate-50 text-xs uppercase text-slate-700 sticky top-0 shadow-sm z-10">
+                    <tr>
+                        <th class="px-6 py-3 whitespace-nowrap">序号</th>
+                        <th class="px-6 py-3 whitespace-nowrap">出库订单号</th>
+                        <th class="px-6 py-3 whitespace-nowrap">总装计划号</th>
+                        <th class="px-6 py-3 whitespace-nowrap">物料名称</th>
+                        <th class="px-6 py-3 whitespace-nowrap">物料编码</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">总数</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center text-green-600">已出</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center text-orange-600">待出</th>
+                        <th class="px-6 py-3 whitespace-nowrap">目标下件口</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">状态</th>
+                        <th class="px-6 py-3 whitespace-nowrap">创建时间</th>
+                        <th class="px-6 py-3 whitespace-nowrap">完成时间</th>
+                        <th class="px-6 py-3 whitespace-nowrap">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="order-table-body">
+                    <!-- 动态渲染 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页组件 -->
+        <div class="p-4 border-t bg-slate-50 flex items-center justify-between">
+            <span class="text-sm text-slate-600">共 <span class="font-bold text-slate-800">4</span> 条记录</span>
+            <div class="flex items-center gap-2">
+                <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>上一页</button>
+                <button class="w-10 h-10 bg-blue-600 text-white rounded-lg font-bold text-sm">1</button>
+                <button class="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-all text-sm disabled:opacity-50" disabled>下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: 新建出库订单 -->
+    <div id="modal-order-form" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50" onclick="closeModal('order-form')"></div>
+        <div class="modal-container bg-white w-full max-w-2xl mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-xl font-bold text-slate-800">新建出库订单</p>
+                    <div class="cursor-pointer" onclick="closeModal('order-form')">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </div>
+                </div>
+                <form class="py-6 grid grid-cols-2 gap-6">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">关联总装计划号 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-plan" class="w-full border rounded p-2.5" placeholder="输入总装计划号">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">物料编码 <span class="text-red-500">*</span></label>
+                        <select id="input-mat-code" class="w-full border rounded p-2.5" onchange="syncMatName()">
+                            <option value="">请选择</option>
+                            <option value="M-BLK-001">M-BLK-001</option>
+                            <option value="M-WHT-002">M-WHT-002</option>
+                            <option value="M-RED-003">M-RED-003</option>
+                            <option value="M-SLV-004">M-SLV-004</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">物料名称 <span class="text-red-500">*</span></label>
+                        <select id="input-mat-name" class="w-full border rounded p-2.5" onchange="syncMatCode()">
+                            <option value="">请选择</option>
+                            <option value="M-BLK-001">简易款车架-黑</option>
+                            <option value="M-WHT-002">豪华款车架-白</option>
+                            <option value="M-RED-003">运动款车架-红</option>
+                            <option value="M-SLV-004">经典款车架-银</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">订单数量 <span class="text-red-500">*</span></label>
+                        <input type="number" id="input-qty" class="w-full border rounded p-2.5" value="100" min="1">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">目标下件口 <span class="text-red-500">*</span></label>
+                        <select id="input-outlet" class="w-full border rounded p-2.5">
+                            <option value="">请选择</option>
+                            <option value="下件口 1">下件口 1 (总装线1)</option>
+                            <option value="下件口 2">下件口 2 (总装线2)</option>
+                            <option value="下件口 3">下件口 3 (总装线3)</option>
+                            <option value="下件口 4">下件口 4 (总装线4)</option>
+                            <option value="下件口 5">下件口 5 (总装线5)</option>
+                            <option value="下件口 6">下件口 6 (总装线6)</option>
+                            <option value="下件口 7">下件口 7 (总装线7)</option>
+                            <option value="下件口 8">下件口 8 (总装线8)</option>
+                        </select>
+                    </div>
+                </form>
+                <div class="flex justify-end pt-2 border-t gap-2">
+                    <button class="px-4 py-2 bg-slate-100 rounded" onclick="closeModal('order-form')">取消</button>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded" onclick="saveOrder()">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: 订单详情 -->
+    <div id="modal-order-view" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50" onclick="closeModal('order-view')"></div>
+        <div class="modal-container bg-white w-full max-w-6xl mx-auto rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6 border-b flex justify-between items-center bg-slate-50">
+                <div>
+                    <p class="text-xl font-bold text-slate-800">出库订单详情</p>
+                    <p class="text-xs text-slate-500" id="view-order-no">--</p>
+                </div>
+                <div class="cursor-pointer" onclick="closeModal('order-view')">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </div>
+            </div>
+            <div class="p-6 border-b bg-white grid grid-cols-5 gap-4 text-sm">
+                <div>
+                    <span class="text-slate-500 block">物料</span>
+                    <span class="font-bold" id="view-order-mat">--</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">总装计划号</span>
+                    <span class="font-bold" id="view-order-plan">--</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">目标下件口</span>
+                    <span class="font-bold" id="view-order-outlet">--</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">进度</span>
+                    <span class="font-bold text-blue-600" id="view-order-progress">--</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">状态</span>
+                    <span id="view-order-status">--</span>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 bg-slate-50">
+                <h4 class="font-bold text-slate-700 mb-4">关联出库任务记录</h4>
+                <div class="bg-white rounded border overflow-hidden">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-100 text-xs uppercase">
+                            <tr>
+                                <th class="p-3">任务编号</th>
+                                <th class="p-3">小车编码</th>
+                                <th class="p-3">物料名称/编码</th>
+                                <th class="p-3">订单编号</th>
+                                <th class="p-3">数量</th>
+                                <th class="p-3">下件口</th>
+                                <th class="p-3">出库库位</th>
+                                <th class="p-3">状态</th>
+                                <th class="p-3">发起时间</th>
+                                <th class="p-3">完成时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="view-order-tasks">
+                            <!-- 动态渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: 确认对话框 -->
+    <div id="modal-confirm" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0 bg-slate-900 opacity-50" onclick="closeModal('confirm')"></div>
+        <div class="modal-container bg-white w-full max-w-md mx-auto rounded-xl shadow-2xl z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-xl font-bold text-slate-800" id="confirm-title">确认操作</p>
+                    <div class="cursor-pointer" onclick="closeModal('confirm')">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </div>
+                </div>
+                <div class="py-6">
+                    <p class="text-slate-600" id="confirm-msg">确认执行此操作？</p>
+                </div>
+                <div class="flex justify-end pt-2 border-t gap-2">
+                    <button class="px-4 py-2 bg-slate-100 rounded" onclick="closeModal('confirm')">取消</button>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded" id="confirm-btn">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 数据 ---
+        let orders = [
+            { id:1, no:'OUT-20260126-001', plan:'PLAN-2026-A-001', code:'M-BLK-001', name:'简易款车架-黑', total:200, cur:80, outlet:'下件口 1', status:'executing', create:'2025-01-26 09:00', finish:'-' },
+            { id:2, no:'OUT-20260125-008', plan:'PLAN-2026-B-005', code:'M-WHT-002', name:'豪华款车架-白', total:150, cur:150, outlet:'下件口 2', status:'completed', create:'2025-01-25 10:00', finish:'2025-01-25 16:30' },
+            { id:3, no:'OUT-20260125-005', plan:'PLAN-2026-C-012', code:'M-RED-003', name:'运动款车架-红', total:100, cur:0, outlet:'下件口 1', status:'pending', create:'2025-01-25 14:20', finish:'-' },
+            { id:4, no:'OUT-20260124-018', plan:'PLAN-2026-D-008', code:'M-SLV-004', name:'经典款车架-银', total:80, cur:30, outlet:'下件口 3', status:'paused', create:'2025-01-24 16:45', finish:'-' }
+        ];
+
+        // 模拟任务数据
+        const mockTasks = {
+            1: [
+                { taskNo:'T-OUT-001', cart:'C-10023', material:'简易款车架-黑/M-BLK-001', orderNo:'OUT-20260126-001', qty:6, outlet:'下件口 1', location:'库区1-A01-05', status:'completed', start:'09:10', finish:'09:25' },
+                { taskNo:'T-OUT-002', cart:'C-10024', material:'简易款车架-黑/M-BLK-001', orderNo:'OUT-20260126-001', qty:6, outlet:'下件口 1', location:'库区1-A01-06', status:'executing', start:'09:30', finish:'-' }
+            ],
+            2: [
+                { taskNo:'T-OUT-010', cart:'C-10030', material:'豪华款车架-白/M-WHT-002', orderNo:'OUT-20260125-008', qty:6, outlet:'下件口 2', location:'库区2-B02-10', status:'completed', start:'10:00', finish:'10:15' }
+            ]
+        };
+
+        // --- Modal 函数 ---
+        function toggleModal(id) {
+            document.getElementById('modal-'+id).classList.toggle('opacity-0');
+            document.getElementById('modal-'+id).classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+        }
+
+        function closeModal(id) {
+            document.getElementById('modal-'+id).classList.add('opacity-0');
+            document.getElementById('modal-'+id).classList.add('pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+
+        // --- 渲染表格 ---
+        function renderTable() {
+            const tbody = document.getElementById('order-table-body');
+            tbody.innerHTML = orders.map((o, i) => {
+                let sBadge, acts = `<button class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm mx-1" onclick="viewOrder(${o.id})" title="查看">详情</button>`;
+                
+                if(o.status === 'executing') {
+                    sBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">执行中</span>';
+                    acts += `<button class="text-green-600 hover:text-green-700 px-2 py-1 text-sm mx-1" onclick="forceComplete(${o.id})" title="强制完成">强制完成</button>`;
+                    acts += `<button class="text-orange-600 hover:text-orange-700 px-2 py-1 text-sm mx-1" onclick="pauseOrder(${o.id})" title="暂停订单">暂停</button>`;
+                } else if(o.status === 'pending') {
+                    sBadge = '<span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">待执行</span>';
+                    acts += `<button class="text-green-600 hover:text-green-700 px-2 py-1 text-sm mx-1" onclick="forceComplete(${o.id})" title="强制完成">强制完成</button>`;
+                    acts += `<button class="text-orange-600 hover:text-orange-700 px-2 py-1 text-sm mx-1" onclick="pauseOrder(${o.id})" title="暂停订单">暂停</button>`;
+                } else if(o.status === 'paused') {
+                    sBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">已暂停</span>';
+                    acts += `<button class="text-green-600 hover:text-green-700 px-2 py-1 text-sm mx-1" onclick="forceComplete(${o.id})" title="强制完成">强制完成</button>`;
+                    acts += `<button class="text-green-600 hover:text-green-700 px-2 py-1 text-sm mx-1" onclick="resumeOrder(${o.id})" title="继续订单">恢复</button>`;
+                } else {
+                    sBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">已完成</span>';
+                }
+                
+                return `<tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4">${i+1}</td>
+                    <td class="px-6 py-4 font-mono font-bold">${o.no}</td>
+                    <td class="px-6 py-4 text-xs">${o.plan}</td>
+                    <td class="px-6 py-4 font-medium">${o.name}</td>
+                    <td class="px-6 py-4 font-mono text-xs">${o.code}</td>
+                    <td class="px-6 py-4 text-center font-bold">${o.total}</td>
+                    <td class="px-6 py-4 text-center text-green-600">${o.cur}</td>
+                    <td class="px-6 py-4 text-center text-orange-600">${o.total - o.cur}</td>
+                    <td class="px-6 py-4">${o.outlet}</td>
+                    <td class="px-6 py-4 text-center">${sBadge}</td>
+                    <td class="px-6 py-4 text-xs">${o.create}</td>
+                    <td class="px-6 py-4 text-xs">${o.finish}</td>
+                    <td class="px-6 py-4">${acts}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- 查看订单详情 ---
+        function viewOrder(id) {
+            const o = orders.find(x => x.id === id);
+            document.getElementById('view-order-no').innerText = o.no;
+            document.getElementById('view-order-mat').innerText = `${o.name} (${o.code})`;
+            document.getElementById('view-order-plan').innerText = o.plan;
+            document.getElementById('view-order-outlet').innerText = o.outlet;
+            document.getElementById('view-order-progress').innerText = `${o.cur} / ${o.total}`;
+            
+            const statusMap = {
+                'pending': { text: '待执行', class: 'bg-slate-200 text-slate-600' },
+                'executing': { text: '执行中', class: 'bg-blue-100 text-blue-700' },
+                'paused': { text: '已暂停', class: 'bg-orange-100 text-orange-700' },
+                'completed': { text: '已完成', class: 'bg-green-100 text-green-700' }
+            };
+            const s = statusMap[o.status];
+            const statusEl = document.getElementById('view-order-status');
+            statusEl.innerText = s.text;
+            statusEl.className = `px-2 py-0.5 rounded text-xs font-bold ${s.class}`;
+            
+            // 渲染任务列表
+            const tasks = mockTasks[id] || [];
+            const tasksHtml = tasks.map(t => {
+                const taskStatusMap = {
+                    'pending': '<span class="text-slate-600">待执行</span>',
+                    'executing': '<span class="text-blue-600">执行中</span>',
+                    'completed': '<span class="text-green-600">已完成</span>'
+                };
+                return `<tr class="border-b">
+                    <td class="p-3">${t.taskNo}</td>
+                    <td class="p-3">${t.cart}</td>
+                    <td class="p-3">${t.material}</td>
+                    <td class="p-3 text-xs">${t.orderNo}</td>
+                    <td class="p-3">${t.qty}</td>
+                    <td class="p-3">${t.outlet}</td>
+                    <td class="p-3 text-xs">${t.location}</td>
+                    <td class="p-3">${taskStatusMap[t.status]}</td>
+                    <td class="p-3 text-xs">${t.start}</td>
+                    <td class="p-3 text-xs">${t.finish}</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('view-order-tasks').innerHTML = tasksHtml || '<tr><td colspan="10" class="p-3 text-center text-slate-400">暂无任务记录</td></tr>';
+            
+            toggleModal('order-view');
+        }
+
+        // --- 新建订单 ---
+        function openOrderModal(mode) {
+            toggleModal('order-form');
+        }
+
+        function syncMatName() {
+            const codeSelect = document.getElementById('input-mat-code');
+            const nameSelect = document.getElementById('input-mat-name');
+            nameSelect.value = codeSelect.value;
+        }
+
+        function syncMatCode() {
+            const codeSelect = document.getElementById('input-mat-code');
+            const nameSelect = document.getElementById('input-mat-name');
+            codeSelect.value = nameSelect.value;
+        }
+
+        function saveOrder() {
+            const plan = document.getElementById('input-plan').value;
+            const code = document.getElementById('input-mat-code').value;
+            const qty = document.getElementById('input-qty').value;
+            const outlet = document.getElementById('input-outlet').value;
+            
+            if (!plan || !code || !qty || !outlet) {
+                alert('请填写所有必填项！');
+                return;
+            }
+            
+            const matNames = {
+                'M-BLK-001': '简易款车架-黑',
+                'M-WHT-002': '豪华款车架-白',
+                'M-RED-003': '运动款车架-红',
+                'M-SLV-004': '经典款车架-银'
+            };
+            
+            const newOrder = {
+                id: orders.length + 1,
+                no: `OUT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(orders.length + 1).padStart(3, '0')}`,
+                plan: plan,
+                code: code,
+                name: matNames[code],
+                total: parseInt(qty),
+                cur: 0,
+                outlet: outlet,
+                status: 'pending',
+                create: new Date().toISOString().slice(0, 16).replace('T', ' '),
+                finish: '-'
+            };
+            
+            orders.unshift(newOrder);
+            renderTable();
+            closeModal('order-form');
+            alert('出库订单创建成功！');
+        }
+
+        // --- 强制完成 ---
+        function forceComplete(id) {
+            toggleModal('confirm');
+            document.getElementById('confirm-title').innerText = '确认强制完成';
+            document.getElementById('confirm-msg').innerText = '确定要强制完成此订单吗？订单将标记为已完成状态。';
+            document.getElementById('confirm-btn').onclick = () => {
+                const order = orders.find(x => x.id === id);
+                order.status = 'completed';
+                order.finish = new Date().toISOString().slice(0, 16).replace('T', ' ');
+                renderTable();
+                closeModal('confirm');
+                alert('订单已强制完成');
+            };
+        }
+
+        // --- 暂停订单 ---
+        function pauseOrder(id) {
+            const order = orders.find(x => x.id === id);
+            order.status = 'paused';
+            renderTable();
+            alert('订单已暂停，在下件作业页面将不可见');
+        }
+
+        // --- 继续订单 ---
+        function resumeOrder(id) {
+            const order = orders.find(x => x.id === id);
+            order.status = order.cur > 0 ? 'executing' : 'pending';
+            renderTable();
+            alert('订单已恢复，在下件作业页面可见');
+        }
+
+        // --- 搜索 ---
+        function searchOrders() {
+            alert('搜索功能（演示）');
+        }
+
+        // --- 初始化 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+        });
+    </script>
+</body>
+</html>
